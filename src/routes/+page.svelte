@@ -88,6 +88,39 @@
   }
 
   let loggedInPlayer = $derived(gameStore.players.find(p => p.id === loggedInUserId));
+
+  // Turn Action tracking
+  let debitBuyClaims = $state<number | null>(null);
+  let debitOperateClaims = $state<number | null>(null);
+  let debitPayFines = $state<number | null>(null);
+  let creditPassengerRevenue = $state<number | null>(null);
+  let creditSellResources = $state<number | null>(null);
+  let dealsAndAdjustments = $state<number | null>(null);
+
+  let netChange = $derived(
+    (creditPassengerRevenue || 0) + 
+    (creditSellResources || 0) + 
+    (dealsAndAdjustments || 0) - 
+    (debitBuyClaims || 0) - 
+    (debitOperateClaims || 0) - 
+    (debitPayFines || 0)
+  );
+
+  let predictedBalance = $derived(loggedInPlayer ? loggedInPlayer.money + netChange : 0);
+
+  function completeTurn() {
+    if (loggedInPlayer) {
+      loggedInPlayer.money = predictedBalance;
+      
+      // Reset inputs
+      debitBuyClaims = null;
+      debitOperateClaims = null;
+      debitPayFines = null;
+      creditPassengerRevenue = null;
+      creditSellResources = null;
+      dealsAndAdjustments = null;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -172,6 +205,60 @@
                 {/each}
             </div>
         </div>
+
+        <!-- Turn Actions Widget -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3>Turn Actions</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                
+                <!-- Debits -->
+                <div>
+                    <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Debits (-)</h4>
+                    <div class="input-group">
+                        <label>Buy Claims/Contracts</label>
+                        <input type="number" min="0" bind:value={debitBuyClaims} placeholder="0" />
+                    </div>
+                    <div class="input-group">
+                        <label>Operate Claims</label>
+                        <input type="number" min="0" bind:value={debitOperateClaims} placeholder="0" />
+                    </div>
+                    <div class="input-group">
+                        <label>Pay Fines</label>
+                        <input type="number" min="0" bind:value={debitPayFines} placeholder="0" />
+                    </div>
+                </div>
+
+                <!-- Credits & Adjustments -->
+                <div>
+                    <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Credits (+) & Adjustments</h4>
+                    <div class="input-group">
+                        <label>Passenger Revenue</label>
+                        <input type="number" min="0" bind:value={creditPassengerRevenue} placeholder="0" />
+                    </div>
+                    <div class="input-group">
+                        <label>Sell Resources</label>
+                        <input type="number" min="0" bind:value={creditSellResources} placeholder="0" />
+                    </div>
+                    <div class="input-group">
+                        <label>Deals & Adjustments (+/-)</label>
+                        <input type="number" bind:value={dealsAndAdjustments} placeholder="0" />
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+                <div>
+                    <span style="font-size: 0.9rem; color: var(--color-text-secondary); margin-right: var(--spacing-md); display: inline-block;">
+                        Net Change: <strong style="color: {netChange > 0 ? 'var(--color-primary)' : netChange < 0 ? '#ff4d4f' : 'inherit'}">{netChange > 0 ? '+' : ''}{netChange}</strong>
+                    </span>
+                    <span style="font-size: 1.1rem; display: inline-block;">
+                        New Balance: <strong style="color: {predictedBalance < 0 ? '#ff4d4f' : 'inherit'}">${predictedBalance}</strong>
+                    </span>
+                </div>
+                <button class="btn btn-primary" onclick={completeTurn} disabled={netChange === 0}>My Turn Complete</button>
+            </div>
+        </div>
     {/if}
 
     <!-- Global Game Stats Widget -->
@@ -235,7 +322,7 @@
   }
   
   .hero h1 {
-    font-size: 4.5rem;
+    font-size: clamp(2.5rem, 10vw, 4.5rem);
     margin-bottom: var(--spacing-sm);
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -252,5 +339,27 @@
     display: flex;
     gap: var(--spacing-md);
     justify-content: center;
+  }
+
+  .input-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .input-group label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+  }
+
+  .input-group input {
+    width: 80px;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-base);
+    color: var(--color-text-primary);
+    text-align: right;
   }
 </style>
