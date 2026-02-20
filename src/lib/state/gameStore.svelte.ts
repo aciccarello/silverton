@@ -5,7 +5,6 @@ export interface Player {
     name: string;
     color: string;
     money: number;
-    resources: Record<Resource, number>;
     claims: number;
     score: number;
 }
@@ -33,13 +32,6 @@ export class GameState {
             name,
             color,
             money: 1600, // Starting money
-            resources: {
-                gold: 0,
-                silver: 0,
-                copper: 0,
-                coal: 0,
-                lumber: 0
-            },
             claims: 0,
             score: 0
         };

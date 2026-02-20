@@ -55,9 +55,9 @@
                     <span class="timestamp">{new Date(record.timestamp + 'Z').toLocaleString()}</span>
                 </div>
                 <div class="history-body">
-                    <p><strong>Phase:</strong> {record.state?.currentPhase || 'Unknown'}</p>
-                    <p><strong>Turn:</strong> {record.state?.turnNumber || 0}</p>
-                    <p><strong>Players:</strong> {record.state?.players?.length || 0}</p>
+                    <p><strong>Phase:</strong> {(record.state as any)?.currentPhase || 'Unknown'}</p>
+                    <p><strong>Turn:</strong> {(record.state as any)?.turnNumber || 0}</p>
+                    <p><strong>Players:</strong> {(record.state as any)?.players?.length || 0}</p>
                 </div>
                 <div class="history-actions">
                     <button 

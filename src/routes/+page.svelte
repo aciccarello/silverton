@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { PageData } from './$types';
+  import type { Player } from '$lib/state/gameStore.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -14,27 +15,31 @@
     gameStore.loadFromJson(data.initialGameState);
   }
 
-  // Auto-save effect
-  $effect(() => {
-    // Reading values to track dependencies
-    const payload = {
-        players: gameStore.players,
-        currentPhase: gameStore.currentPhase,
-        turnNumber: gameStore.turnNumber,
-        activePlayerId: gameStore.activePlayerId,
-        marketPrices: gameStore.marketPrices
-    };
-
-    if (browser) {
-        fetch('/api/state', {
+  async function savePlayer(player: Player) {
+    if (!browser) return;
+    try {
+        await fetch('/api/state/player', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        }).catch(err => console.error('Failed to save state:', err));
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(player)
+        });
+    } catch (err) {
+        console.error('Failed to save player state:', err);
     }
-  });
+  }
+
+  async function saveGame(payload: any) {
+    if (!browser) return;
+    try {
+        await fetch('/api/state/game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } catch (err) {
+        console.error('Failed to save game state:', err);
+    }
+  }
 
   onMount(() => {
     // Check if we already have an active session logged into local storage
@@ -70,6 +75,9 @@
       gameStore.players.push(newPlayer);
       newPlayerName = '';
       logInAs(newPlayerId);
+
+      // Async save
+      savePlayer(newPlayer);
     }
   }
 
@@ -119,7 +127,28 @@
       creditPassengerRevenue = null;
       creditSellResources = null;
       dealsAndAdjustments = null;
+
+      // Sync player balance
+      savePlayer($state.snapshot(loggedInPlayer));
     }
+  }
+
+  function handleStartGame() {
+    gameStore.startGame();
+    saveGame({
+        currentPhase: gameStore.currentPhase,
+        turnNumber: gameStore.turnNumber,
+        activePlayerId: gameStore.activePlayerId
+    });
+  }
+
+  function handleNextPhase() {
+    gameStore.nextPhase();
+    saveGame({
+        currentPhase: gameStore.currentPhase,
+        turnNumber: gameStore.turnNumber,
+        activePlayerId: gameStore.activePlayerId
+    });
   }
 </script>
 
@@ -194,16 +223,6 @@
                 <h2>Your Dossier</h2>
                 <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
             </div>
-            
-            <h4 style="color: var(--color-text-secondary); border-bottom: 1px solid var(--color-border); padding-bottom: 4px; margin-bottom: var(--spacing-sm);">Resources</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-md);">
-                {#each Object.entries(loggedInPlayer.resources) as [resource, amount]}
-                    <div style="background: var(--color-bg-elevated); padding: var(--spacing-sm) var(--spacing-md); border-radius: 4px; border: 1px solid var(--color-border); flex: 1; min-width: 100px; text-align: center;">
-                        <span style="text-transform: capitalize; color: var(--color-text-secondary); font-size: 0.9rem; display: block;">{resource}</span>
-                        <strong style="font-size: 1.25rem;">{amount}</strong>
-                    </div>
-                {/each}
-            </div>
         </div>
 
         <!-- Turn Actions Widget -->
@@ -215,35 +234,35 @@
                 <!-- Debits -->
                 <div>
                     <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Debits (-)</h4>
-                    <div class="input-group">
-                        <label>Buy Claims/Contracts</label>
+                    <label class="input-group">
+                        <span>Buy Claims/Contracts</span>
                         <input type="number" min="0" bind:value={debitBuyClaims} placeholder="0" />
-                    </div>
-                    <div class="input-group">
-                        <label>Operate Claims</label>
+                    </label>
+                    <label class="input-group">
+                        <span>Operate Claims</span>
                         <input type="number" min="0" bind:value={debitOperateClaims} placeholder="0" />
-                    </div>
-                    <div class="input-group">
-                        <label>Pay Fines</label>
+                    </label>
+                    <label class="input-group">
+                        <span>Pay Fines</span>
                         <input type="number" min="0" bind:value={debitPayFines} placeholder="0" />
-                    </div>
+                    </label>
                 </div>
 
                 <!-- Credits & Adjustments -->
                 <div>
                     <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Credits (+) & Adjustments</h4>
-                    <div class="input-group">
-                        <label>Passenger Revenue</label>
+                    <label class="input-group">
+                        <span>Passenger Revenue</span>
                         <input type="number" min="0" bind:value={creditPassengerRevenue} placeholder="0" />
-                    </div>
-                    <div class="input-group">
-                        <label>Sell Resources</label>
+                    </label>
+                    <label class="input-group">
+                        <span>Sell Resources</span>
                         <input type="number" min="0" bind:value={creditSellResources} placeholder="0" />
-                    </div>
-                    <div class="input-group">
-                        <label>Deals & Adjustments (+/-)</label>
+                    </label>
+                    <label class="input-group">
+                        <span>Deals & Adjustments (+/-)</span>
                         <input type="number" bind:value={dealsAndAdjustments} placeholder="0" />
-                    </div>
+                    </label>
                 </div>
             </div>
 
@@ -272,9 +291,9 @@
 
       <div style="margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); padding-top: var(--spacing-md);">
         {#if gameStore.currentPhase === 'setup'}
-            <button class="btn btn-primary" style="width: 100%;" onclick={() => gameStore.startGame()} disabled={gameStore.players.length === 0}>Start Game</button>
+            <button class="btn btn-primary" style="width: 100%;" onclick={handleStartGame} disabled={gameStore.players.length === 0}>Start Game</button>
         {:else}
-            <button class="btn btn-primary" style="width: 100%;" onclick={() => gameStore.nextPhase()}>Next Phase ({gameStore.currentPhase})</button>
+            <button class="btn btn-primary" style="width: 100%;" onclick={handleNextPhase}>Next Phase ({gameStore.currentPhase})</button>
         {/if}
       </div>
     </div>
