@@ -26,12 +26,18 @@ export class GameState {
         lumber: 10
     });
 
+    config = $state({
+        startingMoney: 1600,
+        visibleAmount: 4000,
+        gameGoal: 6000
+    });
+
     addPlayer(name: string, color: string) {
         const newPlayer: Player = {
             id: Math.random().toString(36).substring(2, 9),
             name,
             color,
-            money: 1600, // Starting money
+            money: this.config.startingMoney,
             claims: 0,
             score: 0
         };
@@ -69,6 +75,7 @@ export class GameState {
         if (data.turnNumber) this.turnNumber = data.turnNumber;
         if (data.activePlayerId !== undefined) this.activePlayerId = data.activePlayerId;
         if (data.marketPrices) this.marketPrices = data.marketPrices;
+        if (data.config) this.config = { ...this.config, ...data.config };
     }
 }
 

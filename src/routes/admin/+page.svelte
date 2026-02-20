@@ -33,6 +33,37 @@
             isRollingBack = false;
         }
     }
+
+    // Config state
+    let currentConfig = $state({
+        startingMoney: 1600,
+        visibleAmount: 4000,
+        gameGoal: 6000,
+        ...((data.history[0]?.state as any)?.config || {})
+    });
+    let isSavingConfig = $state(false);
+
+    async function saveConfig() {
+        isSavingConfig = true;
+        try {
+            const res = await fetch('/api/state/game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config: currentConfig })
+            });
+            if (res.ok) {
+                alert('Configuration updated successfully!');
+                await invalidateAll();
+            } else {
+                alert('Failed to update config.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to save config.');
+        } finally {
+            isSavingConfig = false;
+        }
+    }
 </script>
 
 <svelte:head>
@@ -42,6 +73,30 @@
 <div class="header">
     <h1>State History</h1>
     <a href="/" class="btn btn-outline">Back to Dashboard</a>
+</div>
+
+<div class="card" style="margin-bottom: var(--spacing-lg);">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
+        <h2>Game Configuration</h2>
+        <button class="btn btn-primary" onclick={saveConfig} disabled={isSavingConfig}>
+            {isSavingConfig ? 'Saving...' : 'Save Config'}
+        </button>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+        <label class="input-group">
+            <span style="color: var(--color-text-secondary);">Starting Money</span>
+            <input type="number" bind:value={currentConfig.startingMoney} />
+        </label>
+        <label class="input-group">
+            <span style="color: var(--color-text-secondary);">Visible Amount</span>
+            <input type="number" bind:value={currentConfig.visibleAmount} />
+        </label>
+        <label class="input-group">
+            <span style="color: var(--color-text-secondary);">Game Goal</span>
+            <input type="number" bind:value={currentConfig.gameGoal} />
+        </label>
+    </div>
 </div>
 
 {#if data.history.length === 0}
@@ -104,5 +159,19 @@
     }
     .history-body p {
         margin: 0;
+    }
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .input-group input {
+        padding: 0.5rem;
+        border-radius: 4px;
+        border: 1px solid var(--color-border);
+        background: var(--color-bg-base);
+        color: var(--color-text-primary);
+        font-family: inherit;
+        font-size: 1rem;
     }
 </style>

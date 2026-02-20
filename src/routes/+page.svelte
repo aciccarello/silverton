@@ -220,7 +220,7 @@
     {#if loggedInPlayer}
         <div class="card" style="border-top: 4px solid {loggedInPlayer.color}; grid-column: 1 / -1;">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md);">
-                <h2>Your Dossier</h2>
+                <h2>Your balance</h2>
                 <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
             </div>
         </div>
