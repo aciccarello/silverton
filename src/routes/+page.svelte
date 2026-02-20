@@ -148,6 +148,7 @@
   function completeTurn() {
     if (loggedInPlayer) {
       loggedInPlayer.money = predictedBalance;
+      loggedInPlayer.turnReady = true;
       
       // Reset inputs
       debitBuyClaims = null;
@@ -157,12 +158,17 @@
       creditSellResources = null;
       dealsAndAdjustments = null;
 
-      // Sync player balance
+      // Sync player balance and ready state
       savePlayer($state.snapshot(loggedInPlayer));
     }
   }
 
   function handleStartGame() {
+    // Reset ready state on all players and sync each one
+    gameStore.players.forEach(p => {
+      p.turnReady = false;
+      savePlayer($state.snapshot(p));
+    });
     gameStore.startGame();
     saveGame({
         currentPhase: gameStore.currentPhase,
@@ -173,6 +179,11 @@
 
   function handleNextPhase() {
     gameStore.nextPhase();
+    // Reset ready state when advancing to a new turn and sync each player
+    gameStore.players.forEach(p => {
+      p.turnReady = false;
+      savePlayer($state.snapshot(p));
+    });
     saveGame({
         currentPhase: gameStore.currentPhase,
         turnNumber: gameStore.turnNumber,
@@ -367,6 +378,9 @@
                             <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
                             <strong>{player.name}</strong> 
                             {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
+                            {#if player.turnReady}
+                                <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
+                            {/if}
                         </span>
                         <span>
                             {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId}

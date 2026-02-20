@@ -7,6 +7,7 @@ export interface Player {
     money: number;
     claims: number;
     score: number;
+    turnReady?: boolean;
 }
 
 export type GamePhase = 'setup' | 'prospecting' | 'mining' | 'trading' | 'scoring' | 'end';
