@@ -13,6 +13,7 @@
   <header class="app-header container">
     <nav>
       <a href="/" class="nav-link">Dashboard</a>
+      <a href="/rules" class="nav-link">Rules</a>
       <a href="/admin" class="nav-link">Admin</a>
     </nav>
   </header>
