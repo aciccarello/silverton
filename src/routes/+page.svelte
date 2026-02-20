@@ -56,6 +56,24 @@
         loggedInUserId = storedId;
       }
     }
+
+    // Poll the server every 5 seconds to keep game state in sync across players
+    const POLL_INTERVAL_MS = 5_000;
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const freshState = await res.json();
+          gameStore.loadFromJson(freshState);
+        }
+      } catch (err) {
+        // Silently ignore network errors during polling
+        console.warn('State poll failed:', err);
+      }
+    }, POLL_INTERVAL_MS);
+
+    // Clean up on component destroy
+    return () => clearInterval(intervalId);
   });
 
   let newPlayerName = $state('');
