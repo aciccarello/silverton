@@ -333,15 +333,26 @@
     </div>
     
     <div class="card">
-      <h3>Market Prices</h3>
-      <ul style="list-style-type: none; padding: 0;">
-        {#each Object.entries(gameStore.marketPrices) as [resource, price]}
-          <li style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding: 4px 0;">
-            <span style="text-transform: capitalize;">{resource}</span>
-            <strong>${price}</strong>
-          </li>
-        {/each}
-      </ul>
+      <h3>Turn Sequence</h3>
+      <ol class="turn-sequence">
+        <li>Deal Turn Order Cards</li>
+        <li>Prospect &amp; Survey</li>
+        <li>Resolve Disputes</li>
+        <li>Construction &amp; Operation
+          <ol>
+            <li>Buy Claims/Contracts</li>
+            <li>Build Track</li>
+            <li>Operate Claims</li>
+            <li>Make Deals</li>
+            <li>Collect Passenger Revenue</li>
+            <li>Deliver Loads</li>
+            <li>Pay Fines</li>
+          </ol>
+        </li>
+        <li>Determine Price Changes</li>
+        <li>Replenish Cards</li>
+        <li>Advance Game Turn</li>
+      </ol>
     </div>
 
     <div class="card">
@@ -415,5 +426,28 @@
     background: var(--color-bg-base);
     color: var(--color-text-primary);
     text-align: right;
+  }
+
+  .turn-sequence {
+    list-style-type: upper-roman;
+    padding-left: var(--spacing-lg);
+    margin: 0;
+  }
+
+  .turn-sequence li {
+    color: var(--color-text-secondary);
+    padding: 3px 0;
+    font-size: 0.95rem;
+  }
+
+  .turn-sequence ol {
+    list-style-type: decimal;
+    padding-left: var(--spacing-lg);
+    margin: 4px 0 2px;
+  }
+
+  .turn-sequence ol li {
+    font-size: 0.85rem;
+    padding: 1px 0;
   }
 </style>
