@@ -10,10 +10,17 @@
   // Local device authentication state
   let loggedInUserId = $state<string | null>(null);
 
-  // Load initial server data into store
-  if (data.initialGameState) {
-    gameStore.loadFromJson(data.initialGameState);
-  }
+  // Load initial server data into store in an effect to avoid the state_referenced_locally warning
+  $effect(() => {
+    if (data.initialGameState) {
+      // Use untrack so we don't accidentally re-run this if something inside initialGameState were to theoretically change
+      import('svelte').then(({ untrack }) => {
+        untrack(() => {
+          gameStore.loadFromJson(data.initialGameState);
+        });
+      });
+    }
+  });
 
   async function savePlayer(player: Player) {
     if (!browser) return;
@@ -197,15 +204,15 @@
       <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-lg);">
         <p style="margin-bottom: var(--spacing-sm); color: var(--color-text-secondary);">Or register a new player:</p>
         {#if gameStore.currentPhase === 'setup'}
-          <div style="display: flex; gap: 0.5rem; justify-content: center;">
+          <form style="display: flex; gap: 0.5rem; justify-content: center;" onsubmit={(e) => { e.preventDefault(); handleAddPlayer(); }}>
             <input 
               type="text" 
               bind:value={newPlayerName} 
               placeholder="Your Name" 
               style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--color-border); background: var(--color-bg-elevated); color: var(--color-text-primary);"
             />
-            <button class="btn btn-primary" style="padding: 0.5rem 1rem;" onclick={handleAddPlayer}>Join</button>
-          </div>
+            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">Join</button>
+          </form>
         {:else}
           <p><em>Registration is closed once the game starts.</em></p>
         {/if}
@@ -275,7 +282,7 @@
                         New Balance: <strong style="color: {predictedBalance < 0 ? '#ff4d4f' : 'inherit'}">${predictedBalance}</strong>
                     </span>
                 </div>
-                <button class="btn btn-primary" onclick={completeTurn} disabled={netChange === 0}>My Turn Complete</button>
+                <button class="btn btn-primary" onclick={completeTurn} disabled={predictedBalance < 0}>My Turn Complete</button>
             </div>
         </div>
     {/if}
@@ -323,7 +330,13 @@
                             <strong>{player.name}</strong> 
                             {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
                         </span>
-                        <span>${player.money}</span>
+                        <span>
+                            {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId}
+                                ${player.money}
+                            {:else}
+                                <span style="color: var(--color-text-secondary); font-style: italic;">Hidden</span>
+                            {/if}
+                        </span>
                     </li>
                 {/each}
             </ul>
@@ -365,11 +378,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
-  }
-
-  .input-group label {
-    font-size: 0.9rem;
-    color: var(--color-text-secondary);
   }
 
   .input-group input {
