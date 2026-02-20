@@ -347,9 +347,9 @@
       <h3>Turn Sequence</h3>
       <ol class="turn-sequence">
         <li>Deal Turn Order Cards</li>
-        <li>Prospect &amp; Survey</li>
-        <li>Resolve Disputes</li>
-        <li>Construction &amp; Operation
+        <li class:active-step={gameStore.currentPhase === 'prospecting'}>Prospect &amp; Survey</li>
+        <li class:active-step={gameStore.currentPhase === 'prospecting'}>Resolve Disputes</li>
+        <li class:active-step={gameStore.currentPhase === 'operating'}>Construction &amp; Operation
           <ol>
             <li>Buy Claims/Contracts</li>
             <li>Build Track</li>
@@ -360,9 +360,9 @@
             <li>Pay Fines</li>
           </ol>
         </li>
-        <li>Determine Price Changes</li>
-        <li>Replenish Cards</li>
-        <li>Advance Game Turn</li>
+        <li class:active-step={gameStore.currentPhase === 'reset'}>Determine Price Changes</li>
+        <li class:active-step={gameStore.currentPhase === 'reset'}>Replenish Cards</li>
+        <li class:active-step={gameStore.currentPhase === 'reset'}>Advance Game Turn</li>
       </ol>
     </div>
 
@@ -463,5 +463,10 @@
   .turn-sequence ol li {
     font-size: 0.85rem;
     padding: 1px 0;
+  }
+
+  .turn-sequence .active-step {
+    font-weight: bold;
+    color: var(--color-primary);
   }
 </style>

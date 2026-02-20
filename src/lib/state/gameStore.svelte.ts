@@ -10,7 +10,7 @@ export interface Player {
     turnReady?: boolean;
 }
 
-export type GamePhase = 'setup' | 'prospecting' | 'mining' | 'trading' | 'scoring' | 'end';
+export type GamePhase = 'setup' | 'prospecting' | 'operating' | 'reset' | 'end';
 
 export class GameState {
     players = $state<Player[]>([]);
@@ -58,12 +58,13 @@ export class GameState {
     }
 
     nextPhase() {
-        const phases: GamePhase[] = ['setup', 'prospecting', 'mining', 'trading', 'scoring', 'end'];
-        const currentIndex = phases.indexOf(this.currentPhase);
-        if (currentIndex < phases.length - 1) {
+        const phases: GamePhase[] = ['prospecting', 'operating', 'reset'];
+        const currentIndex = phases.indexOf(this.currentPhase as any);
+        if (currentIndex >= 0 && currentIndex < phases.length - 1) {
+            // Advance to next phase within the turn
             this.currentPhase = phases[currentIndex + 1];
         } else {
-            // New turn
+            // End of reset phase (or unknown) → new turn
             this.turnNumber++;
             this.currentPhase = 'prospecting';
         }
