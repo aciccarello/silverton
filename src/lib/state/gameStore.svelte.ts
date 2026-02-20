@@ -32,7 +32,7 @@ export class GameState {
             id: Math.random().toString(36).substring(2, 9),
             name,
             color,
-            money: 500, // Starting money
+            money: 1600, // Starting money
             resources: {
                 gold: 0,
                 silver: 0,
@@ -68,6 +68,15 @@ export class GameState {
             this.turnNumber++;
             this.currentPhase = 'prospecting';
         }
+    }
+
+    loadFromJson(data: any) {
+        if (!data || Object.keys(data).length === 0) return;
+        if (data.players) this.players = data.players;
+        if (data.currentPhase) this.currentPhase = data.currentPhase;
+        if (data.turnNumber) this.turnNumber = data.turnNumber;
+        if (data.activePlayerId !== undefined) this.activePlayerId = data.activePlayerId;
+        if (data.marketPrices) this.marketPrices = data.marketPrices;
     }
 }
 

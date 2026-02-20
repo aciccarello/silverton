@@ -1,5 +1,50 @@
 <script lang="ts">
   import { gameStore } from '$lib/state/gameStore.svelte';
+  import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+
+  // Local device authentication state
+  let loggedInUserId = $state<string | null>(null);
+
+  // Load initial server data into store
+  if (data.initialGameState) {
+    gameStore.loadFromJson(data.initialGameState);
+  }
+
+  // Auto-save effect
+  $effect(() => {
+    // Reading values to track dependencies
+    const payload = {
+        players: gameStore.players,
+        currentPhase: gameStore.currentPhase,
+        turnNumber: gameStore.turnNumber,
+        activePlayerId: gameStore.activePlayerId,
+        marketPrices: gameStore.marketPrices
+    };
+
+    if (browser) {
+        fetch('/api/state', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        }).catch(err => console.error('Failed to save state:', err));
+    }
+  });
+
+  onMount(() => {
+    // Check if we already have an active session logged into local storage
+    if (browser) {
+      const storedId = localStorage.getItem('silverton_active_user_id');
+      if (storedId && gameStore.players.some(p => p.id === storedId)) {
+        loggedInUserId = storedId;
+      }
+    }
+  });
 
   let newPlayerName = $state('');
   
@@ -8,10 +53,41 @@
       // Pick random color from a preset list
       const colors = ['#e6a122', '#a83c32', '#326da8', '#32a852'];
       const color = colors[gameStore.players.length % colors.length];
-      gameStore.addPlayer(newPlayerName, color);
+      
+      const newPlayerId = Math.random().toString(36).substring(2, 9);
+      
+      const newPlayer = {
+          id: newPlayerId,
+          name: newPlayerName.trim(),
+          color,
+          money: 1600, // Updated starting money
+          resources: { gold: 0, silver: 0, copper: 0, coal: 0, lumber: 0 },
+          claims: 0,
+          score: 0
+      };
+      
+      // Mutating the gameStore directly
+      gameStore.players.push(newPlayer);
       newPlayerName = '';
+      logInAs(newPlayerId);
     }
   }
+
+  function logInAs(playerId: string) {
+    loggedInUserId = playerId;
+    if (browser) {
+      localStorage.setItem('silverton_active_user_id', playerId);
+    }
+  }
+
+  function logOut() {
+    loggedInUserId = null;
+    if (browser) {
+      localStorage.removeItem('silverton_active_user_id');
+    }
+  }
+
+  let loggedInPlayer = $derived(gameStore.players.find(p => p.id === loggedInUserId));
 </script>
 
 <svelte:head>
@@ -24,64 +100,131 @@
   <p class="subtitle stagger-1">Board Game State Manager</p>
   
   <div class="actions stagger-2">
-    {#if gameStore.currentPhase === 'setup'}
-      <button class="btn btn-primary" onclick={() => gameStore.startGame()} disabled={gameStore.players.length === 0}>Start Game</button>
-    {:else}
-      <button class="btn btn-primary" onclick={() => gameStore.nextPhase()}>Next Phase ({gameStore.currentPhase})</button>
+    {#if loggedInPlayer}
+        <button class="btn btn-outline" style="border-color: {loggedInPlayer.color}; color: {loggedInPlayer.color}; pointer-events: none;">Welcome, {loggedInPlayer.name}</button>
+        <button class="btn btn-outline" onclick={logOut}>Log Out</button>
     {/if}
   </div>
 </div>
 
-<div class="dashboard-grid animate-entrance stagger-3">
-  <div class="card">
-    <h3>Game Status</h3>
-    <p><strong>Phase:</strong> {gameStore.currentPhase}</p>
-    <p><strong>Turn:</strong> {gameStore.turnNumber}</p>
-    {#if gameStore.activePlayerId}
-      <p><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
-    {/if}
+{#if !loggedInUserId}
+  <!-- LOGIN VIEW -->
+  <div class="dashboard-grid animate-entrance stagger-3" style="max-width: 600px; margin: 0 auto;">
+    <div class="card" style="text-align: center;">
+      <h2>Join Game</h2>
+      
+      <div style="margin: var(--spacing-lg) 0;">
+        <p style="margin-bottom: var(--spacing-sm); color: var(--color-text-secondary);">Select an existing player to log in:</p>
+        {#if gameStore.players.length === 0}
+          <p><em>No players registered yet.</em></p>
+        {:else}
+          <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+            {#each gameStore.players as player}
+              <button 
+                  class="btn btn-outline" 
+                  style="border-color: {player.color}; color: {player.color}; width: 100%;"
+                  onclick={() => logInAs(player.id)}
+              >
+                  {player.name}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      
+      <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-lg);">
+        <p style="margin-bottom: var(--spacing-sm); color: var(--color-text-secondary);">Or register a new player:</p>
+        {#if gameStore.currentPhase === 'setup'}
+          <div style="display: flex; gap: 0.5rem; justify-content: center;">
+            <input 
+              type="text" 
+              bind:value={newPlayerName} 
+              placeholder="Your Name" 
+              style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--color-border); background: var(--color-bg-elevated); color: var(--color-text-primary);"
+            />
+            <button class="btn btn-primary" style="padding: 0.5rem 1rem;" onclick={handleAddPlayer}>Join</button>
+          </div>
+        {:else}
+          <p><em>Registration is closed once the game starts.</em></p>
+        {/if}
+      </div>
+    </div>
   </div>
-  
-  <div class="card">
-    <h3>Players ({gameStore.players.length})</h3>
-    {#if gameStore.players.length === 0}
-      <p>No players added yet.</p>
-    {:else}
+{:else}
+  <!-- PLAYER DASHBOARD VIEW -->
+  <div class="dashboard-grid animate-entrance stagger-3">
+    
+    <!-- Player Stats Widget -->
+    {#if loggedInPlayer}
+        <div class="card" style="border-top: 4px solid {loggedInPlayer.color}; grid-column: 1 / -1;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md);">
+                <h2>Your Dossier</h2>
+                <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
+            </div>
+            
+            <h4 style="color: var(--color-text-secondary); border-bottom: 1px solid var(--color-border); padding-bottom: 4px; margin-bottom: var(--spacing-sm);">Resources</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-md);">
+                {#each Object.entries(loggedInPlayer.resources) as [resource, amount]}
+                    <div style="background: var(--color-bg-elevated); padding: var(--spacing-sm) var(--spacing-md); border-radius: 4px; border: 1px solid var(--color-border); flex: 1; min-width: 100px; text-align: center;">
+                        <span style="text-transform: capitalize; color: var(--color-text-secondary); font-size: 0.9rem; display: block;">{resource}</span>
+                        <strong style="font-size: 1.25rem;">{amount}</strong>
+                    </div>
+                {/each}
+            </div>
+        </div>
+    {/if}
+
+    <!-- Global Game Stats Widget -->
+    <div class="card">
+      <h3>Game Status</h3>
+      <p><strong>Phase:</strong> {gameStore.currentPhase}</p>
+      <p><strong>Turn:</strong> {gameStore.turnNumber}</p>
+      {#if gameStore.activePlayerId}
+        <p><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
+      {/if}
+
+      <div style="margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); padding-top: var(--spacing-md);">
+        {#if gameStore.currentPhase === 'setup'}
+            <button class="btn btn-primary" style="width: 100%;" onclick={() => gameStore.startGame()} disabled={gameStore.players.length === 0}>Start Game</button>
+        {:else}
+            <button class="btn btn-primary" style="width: 100%;" onclick={() => gameStore.nextPhase()}>Next Phase ({gameStore.currentPhase})</button>
+        {/if}
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>Market Prices</h3>
       <ul style="list-style-type: none; padding: 0;">
-        {#each gameStore.players as player}
-          <li style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
-            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
-            <strong>{player.name}</strong> - ${player.money}
+        {#each Object.entries(gameStore.marketPrices) as [resource, price]}
+          <li style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding: 4px 0;">
+            <span style="text-transform: capitalize;">{resource}</span>
+            <strong>${price}</strong>
           </li>
         {/each}
       </ul>
-    {/if}
-    
-    {#if gameStore.currentPhase === 'setup'}
-      <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-        <input 
-          type="text" 
-          bind:value={newPlayerName} 
-          placeholder="New Player Name" 
-          style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--color-border); background: var(--color-bg-elevated); color: var(--color-text-primary);"
-        />
-        <button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick={handleAddPlayer}>Add</button>
-      </div>
-    {/if}
+    </div>
+
+    <div class="card">
+        <h3>All Players ({gameStore.players.length})</h3>
+        {#if gameStore.players.length === 0}
+            <p>No players added yet.</p>
+        {:else}
+            <ul style="list-style-type: none; padding: 0;">
+                {#each gameStore.players as player}
+                    <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
+                            <strong>{player.name}</strong> 
+                            {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
+                        </span>
+                        <span>${player.money}</span>
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+    </div>
   </div>
-  
-  <div class="card">
-    <h3>Market Prices</h3>
-    <ul style="list-style-type: none; padding: 0;">
-      {#each Object.entries(gameStore.marketPrices) as [resource, price]}
-        <li style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding: 4px 0;">
-          <span style="text-transform: capitalize;">{resource}</span>
-          <strong>${price}</strong>
-        </li>
-      {/each}
-    </ul>
-  </div>
-</div>
+{/if}
 
 <style>
   .hero {
