@@ -122,6 +122,10 @@
 
   let loggedInPlayer = $derived(gameStore.players.find(p => p.id === loggedInUserId));
 
+  const SEASONS = ['Spring', 'Summer', 'Fall', 'Winter'];
+  let season = $derived(SEASONS[(gameStore.turnNumber - 1) % 4]);
+  let isWinter = $derived(season === 'Winter');
+
   // Turn Action tracking
   let debitBuyClaims = $state<number | null>(null);
   let debitOperateClaims = $state<number | null>(null);
@@ -253,6 +257,11 @@
         <!-- Turn Actions Widget -->
         <div class="card" style="grid-column: 1 / -1;">
             <h3>Turn Actions</h3>
+            {#if isWinter}
+              <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9; display: flex; align-items: center; gap: 8px;">
+                ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries this turn.
+              </div>
+            {/if}
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
                 
@@ -309,7 +318,7 @@
     <div class="card">
       <h3>Game Status</h3>
       <p><strong>Phase:</strong> {gameStore.currentPhase}</p>
-      <p><strong>Turn:</strong> {gameStore.turnNumber}</p>
+      <p><strong>Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
       {#if gameStore.activePlayerId}
         <p><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
       {/if}
