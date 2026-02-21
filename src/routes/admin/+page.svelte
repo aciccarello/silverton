@@ -40,6 +40,25 @@
         }
     }
 
+    async function handleResetGame() {
+        const confirmed = await confirmStore.confirm('Are you sure you want to start a new game? This will clear the current player list and active game state, but the current game history will be preserved for audit/rollback.');
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch('/api/state/reset', { method: 'POST' });
+            if (res.ok) {
+                alert('Success! Game state has been cleared.');
+                window.location.href = '/';
+            } else {
+                const err = await res.json();
+                alert('Reset failed: ' + err.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('An unexpected error occurred during reset.');
+        }
+    }
+
     // Config state
     let currentConfig = $state({
         startingMoney: 1600,
@@ -93,6 +112,9 @@
 
 <div class="header">
     <h1>Administration</h1>
+    <button class="btn btn-outline" style="border-color: #ff4d4f; color: #ff4d4f;" onclick={handleResetGame}>
+        Start New Game
+    </button>
 </div>
 
 <section class="card" style="margin-bottom: var(--spacing-lg);">
@@ -122,6 +144,11 @@
 <section class="card">
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
         <h2>State History</h2>
+        <div class="pagination-status">
+            Showing {data.history.length === 0 ? 0 : (data.pagination.currentPage - 1) * data.pagination.limit + 1}
+            - {(data.pagination.currentPage - 1) * data.pagination.limit + data.history.length} 
+            of {data.pagination.totalCount}
+        </div>
     </div>
 
     {#if data.history.length === 0}
@@ -168,6 +195,32 @@
                 </tbody>
             </table>
         </div>
+
+        {#if data.pagination.totalPages > 1}
+            <div class="pagination-controls">
+                <a 
+                    href="?page={data.pagination.currentPage - 1}" 
+                    class="btn btn-sm btn-outline" 
+                    class:disabled={data.pagination.currentPage <= 1}
+                    onclick={(e) => data.pagination.currentPage <= 1 && e.preventDefault()}
+                >
+                    &laquo; Newer
+                </a>
+                
+                <div class="page-indicator">
+                    Page <strong>{data.pagination.currentPage}</strong> of {data.pagination.totalPages}
+                </div>
+
+                <a 
+                    href="?page={data.pagination.currentPage + 1}" 
+                    class="btn btn-sm btn-outline" 
+                    class:disabled={data.pagination.currentPage >= data.pagination.totalPages}
+                    onclick={(e) => data.pagination.currentPage >= data.pagination.totalPages && e.preventDefault()}
+                >
+                    Older &raquo;
+                </a>
+            </div>
+        {/if}
     {/if}
 </section>
 
@@ -238,5 +291,31 @@
         color: var(--color-text-primary);
         font-family: inherit;
         font-size: 1rem;
+    }
+
+    .pagination-status {
+        font-size: 0.85rem;
+        color: var(--color-text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+        padding-top: var(--spacing-md);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .page-indicator {
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+    }
+
+    .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
     }
 </style>

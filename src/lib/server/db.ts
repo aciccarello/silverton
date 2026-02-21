@@ -55,10 +55,15 @@ export function updateState(
     }
 }
 
-export function getHistory(): Array<{ id: number, timestamp: string, state_json: string }> {
-    // Limit to last 50 entries to avoid massive payloads
-    const stmt = db.prepare('SELECT id, timestamp, state_json FROM state_history ORDER BY id DESC LIMIT 50');
-    return stmt.all() as Array<{ id: number, timestamp: string, state_json: string }>;
+export function getHistory(limit: number = 50, offset: number = 0): Array<{ id: number, timestamp: string, state_json: string }> {
+    const stmt = db.prepare('SELECT id, timestamp, state_json FROM state_history ORDER BY id DESC LIMIT ? OFFSET ?');
+    return stmt.all(limit, offset) as Array<{ id: number, timestamp: string, state_json: string }>;
+}
+
+export function getTotalHistoryCount(): number {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM state_history');
+    const result = stmt.get() as { count: number };
+    return result.count;
 }
 
 export function rollbackTo(id: number, lastModifiedBy?: string, lastModifiedAction?: string) {
@@ -84,4 +89,8 @@ export function rollbackTo(id: number, lastModifiedBy?: string, lastModifiedActi
         db.exec('ROLLBACK');
         throw err;
     }
+}
+
+export function resetState(lastModifiedBy?: string, lastModifiedAction?: string) {
+    updateState(() => ({}), lastModifiedBy, lastModifiedAction);
 }
