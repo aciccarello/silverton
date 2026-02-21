@@ -145,6 +145,8 @@
   let nextPhase = $derived(gameStore.currentPhase === 'reset' ? 'prospecting' : gameStore.currentPhase === 'prospecting' ? 'operating' : 'reset');
 
   // Turn Action tracking
+  let debitBuyTracks = $state<number | null>(null);
+  let debitBuyContracts = $state<number | null>(null);
   let debitBuyClaims = $state<number | null>(null);
   let debitOperateClaims = $state<number | null>(null);
   let debitPayFines = $state<number | null>(null);
@@ -156,6 +158,8 @@
     (creditPassengerRevenue || 0) + 
     (creditSellResources || 0) + 
     (dealsAndAdjustments || 0) - 
+    (debitBuyTracks || 0) -
+    (debitBuyContracts || 0) -
     (debitBuyClaims || 0) - 
     (debitOperateClaims || 0) - 
     (debitPayFines || 0)
@@ -198,6 +202,8 @@
       loggedInPlayer.turnReady = true;
       
       // Reset inputs
+      debitBuyTracks = null;
+      debitBuyContracts = null;
       debitBuyClaims = null;
       debitOperateClaims = null;
       debitPayFines = null;
@@ -373,7 +379,15 @@
                 <div>
                     <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Debits (-)</h4>
                     <label class="input-group">
-                        <span>Buy Claims/Contracts</span>
+                        <span>Buy Tracks</span>
+                        <input type="number" min="0" bind:value={debitBuyTracks} placeholder="0" />
+                    </label>
+                    <label class="input-group">
+                        <span>Buy Contracts</span>
+                        <input type="number" min="0" bind:value={debitBuyContracts} placeholder="0" />
+                    </label>
+                    <label class="input-group">
+                        <span>Buy Claims</span>
                         <input type="number" min="0" bind:value={debitBuyClaims} placeholder="0" />
                     </label>
                     <label class="input-group">
