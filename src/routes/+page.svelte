@@ -369,7 +369,7 @@
             <h3>Turn Actions</h3>
             {#if isWinter}
               <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9; display: flex; align-items: center; gap: 8px;">
-                ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries this turn.
+                ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries/passenger rail this turn.
               </div>
             {/if}
             
