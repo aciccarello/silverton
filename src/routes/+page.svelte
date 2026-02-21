@@ -674,6 +674,7 @@
         </div>
       {/if}
 
+      <p>Everyone ready to move forward?</p>
       <div style="margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); padding-top: var(--spacing-md);">
         {#if gameStore.currentPhase === 'setup'}
             <button class="btn btn-primary" style="width: 100%;" onclick={handleStartGame} disabled={gameStore.players.length === 0}>Start Game</button>
