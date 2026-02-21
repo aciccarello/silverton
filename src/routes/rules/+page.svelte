@@ -8,6 +8,7 @@
   <ul>
     <li><a href="https://board-game-rules.com/wp-content/uploads/2025/01/silverton_Official-Rules.pdf" target="_blank" rel="noopener noreferrer">Silverton Official Rules PDF</a></li>
     <li><a href="https://boardgamegeek.com/boardgame/511/silverton" target="_blank" rel="noopener noreferrer">BoardGameGeek: Silverton (1990)</a></li>
+    <li><a href="https://docs.google.com/spreadsheets/d/1-3tTmVOYEiv-pRnBoSkhal4yXAGd41lmZclD9r9ok6Y/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Isaac's Spreadsheet</a></li>
   </ul>
   <h2>Game Setup</h2>
   <ul>
