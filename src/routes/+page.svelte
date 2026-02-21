@@ -71,6 +71,7 @@
       const storedId = localStorage.getItem('silverton_active_user_id');
       if (storedId && gameStore.players.some(p => p.id === storedId)) {
         loggedInUserId = storedId;
+        loadTurnActionsFromLocal();
       }
     }
 
@@ -127,10 +128,12 @@
     loggedInUserId = playerId;
     if (browser) {
       localStorage.setItem('silverton_active_user_id', playerId);
+      loadTurnActionsFromLocal();
     }
   }
 
   function logOut() {
+    clearTurnActionsFromLocal();
     loggedInUserId = null;
     if (browser) {
       localStorage.removeItem('silverton_active_user_id');
@@ -166,7 +169,65 @@
   );
 
   let predictedBalance = $derived(loggedInPlayer ? loggedInPlayer.money + netChange : 0);
-  
+
+  // Persistence logic for turn actions
+  function saveTurnActionsToLocal() {
+    if (!browser || !loggedInUserId) return;
+    const data = {
+      debitBuyTracks,
+      debitBuyContracts,
+      debitBuyClaims,
+      debitOperateClaims,
+      debitPayFines,
+      creditPassengerRevenue,
+      creditSellResources,
+      dealsAndAdjustments
+    };
+    localStorage.setItem(`silverton_actions_${loggedInUserId}`, JSON.stringify(data));
+  }
+
+  function loadTurnActionsFromLocal() {
+    if (!browser || !loggedInUserId) return;
+    const saved = localStorage.getItem(`silverton_actions_${loggedInUserId}`);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        debitBuyTracks = data.debitBuyTracks;
+        debitBuyContracts = data.debitBuyContracts;
+        debitBuyClaims = data.debitBuyClaims;
+        debitOperateClaims = data.debitOperateClaims;
+        debitPayFines = data.debitPayFines;
+        creditPassengerRevenue = data.creditPassengerRevenue;
+        creditSellResources = data.creditSellResources;
+        dealsAndAdjustments = data.dealsAndAdjustments;
+      } catch (e) {
+        console.error('Failed to parse saved turn actions', e);
+      }
+    }
+  }
+
+  function clearTurnActionsFromLocal() {
+    if (!browser || !loggedInUserId) return;
+    localStorage.removeItem(`silverton_actions_${loggedInUserId}`);
+  }
+
+  // Effect to auto-save inputs when they change
+  $effect(() => {
+    // We reference all inputs here to track them
+    const _ = {
+      debitBuyTracks,
+      debitBuyContracts,
+      debitBuyClaims,
+      debitOperateClaims,
+      debitPayFines,
+      creditPassengerRevenue,
+      creditSellResources,
+      dealsAndAdjustments,
+      loggedInUserId // Reset if user changes
+    };
+    saveTurnActionsToLocal();
+  });
+
   let sortedPlayers = $derived([...gameStore.players].sort((a, b) => {
     if (a.turnOrder === undefined) return 1;
     if (b.turnOrder === undefined) return -1;
@@ -210,6 +271,8 @@
       creditPassengerRevenue = null;
       creditSellResources = null;
       dealsAndAdjustments = null;
+
+      clearTurnActionsFromLocal();
 
       // Sync player balance and ready state
       savePlayer($state.snapshot(loggedInPlayer), 'Completed turn');
