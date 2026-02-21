@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gameStore } from '$lib/state/gameStore.svelte';
+  import { confirmStore } from '$lib/state/confirmStore.svelte';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { PageData } from './$types';
@@ -315,8 +316,14 @@
     }, 'Started game');
   }
 
-  function handleNextPhase() {
+  async function handleNextPhase() {
     const wasReset = gameStore.currentPhase === 'reset';
+    
+    if (wasReset) {
+      const confirmed = await confirmStore.confirm('Are you sure you want to advance to the next turn? This will shuffle turn order and reset all player ready states.');
+      if (!confirmed) return;
+    }
+
     gameStore.nextPhase();
     // Reset ready state and re-shuffle turn order when a new turn begins
     if (wasReset) {

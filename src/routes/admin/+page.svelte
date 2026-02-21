@@ -1,12 +1,14 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
+    import { confirmStore } from '$lib/state/confirmStore.svelte';
     import type { PageData } from './$types';
   
     let { data }: { data: PageData } = $props();
     let isRollingBack = $state(false);
 
     async function handleRollback(id: number) {
-        if (!confirm('Are you sure you want to rollback to this state? All progress after this point will be lost.')) {
+        const confirmed = await confirmStore.confirm('Are you sure you want to rollback to this state? All progress after this point will be lost.');
+        if (!confirmed) {
             return;
         }
 
