@@ -20,15 +20,39 @@ if (count === 0) {
     insertStmt.run('{}');
 }
 
-export function saveState(jsonString: string) {
-    const stmt = db.prepare('INSERT INTO state_history (state_json) VALUES (?)');
-    stmt.run(jsonString);
-}
-
 export function loadState(): string {
     const stmt = db.prepare('SELECT state_json FROM state_history ORDER BY id DESC LIMIT 1');
     const result = stmt.get() as { state_json: string } | undefined;
     return result?.state_json || '{}';
+}
+
+export function updateState(
+    updater: (state: any) => any,
+    lastModifiedBy?: string,
+    lastModifiedAction?: string
+) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+        const stmt = db.prepare('SELECT state_json FROM state_history ORDER BY id DESC LIMIT 1');
+        const result = stmt.get() as { state_json: string } | undefined;
+        let state = JSON.parse(result?.state_json || '{}');
+
+        // Apply updates
+        state = updater(state);
+
+        // Inject metadata
+        if (lastModifiedBy) state.lastModifiedBy = lastModifiedBy;
+        if (lastModifiedAction) state.lastModifiedAction = lastModifiedAction;
+
+        // Save new record
+        const insertStmt = db.prepare('INSERT INTO state_history (state_json) VALUES (?)');
+        insertStmt.run(JSON.stringify(state));
+
+        db.exec('COMMIT');
+    } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+    }
 }
 
 export function getHistory(): Array<{ id: number, timestamp: string, state_json: string }> {
@@ -38,21 +62,26 @@ export function getHistory(): Array<{ id: number, timestamp: string, state_json:
 }
 
 export function rollbackTo(id: number, lastModifiedBy?: string, lastModifiedAction?: string) {
-    const stmt = db.prepare('SELECT state_json FROM state_history WHERE id = ?');
-    const result = stmt.get(id) as { state_json: string } | undefined;
+    db.exec('BEGIN IMMEDIATE');
+    try {
+        const stmt = db.prepare('SELECT state_json FROM state_history WHERE id = ?');
+        const result = stmt.get(id) as { state_json: string } | undefined;
 
-    if (result) {
-        let state: any = {};
-        try {
-            state = JSON.parse(result.state_json);
-        } catch (e) { /* ignore */ }
+        if (result) {
+            let state = JSON.parse(result.state_json);
 
-        if (lastModifiedBy) state.lastModifiedBy = lastModifiedBy;
-        if (lastModifiedAction) state.lastModifiedAction = lastModifiedAction;
+            if (lastModifiedBy) state.lastModifiedBy = lastModifiedBy;
+            if (lastModifiedAction) state.lastModifiedAction = lastModifiedAction;
 
-        // To rollback, we just insert the old state as the new head of history.
-        saveState(JSON.stringify(state));
-    } else {
-        throw new Error('Historical state not found');
+            const insertStmt = db.prepare('INSERT INTO state_history (state_json) VALUES (?)');
+            insertStmt.run(JSON.stringify(state));
+
+            db.exec('COMMIT');
+        } else {
+            throw new Error('Historical state not found');
+        }
+    } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
     }
 }

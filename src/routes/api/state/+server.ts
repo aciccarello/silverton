@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { loadState, saveState } from '$lib/server/db';
+import { loadState, updateState } from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = () => {
@@ -13,10 +13,16 @@ export const GET: RequestHandler = () => {
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const data = await request.json();
-    saveState(JSON.stringify(data));
+      const payload = await request.json();
+      const { lastModifiedBy, lastModifiedAction, ...data } = payload;
+
+      updateState(() => {
+          // Full state replacement
+          return data;
+      }, lastModifiedBy, lastModifiedAction);
+
     return json({ success: true });
-  } catch (err) {
-    return json({ success: false, error: 'Invalid JSON' }, { status: 400 });
+  } catch (err: any) {
+      return json({ success: false, error: err.message || 'Update failed' }, { status: 500 });
   }
 };
