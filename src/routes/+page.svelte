@@ -125,6 +125,7 @@
   const SEASONS = ['Spring', 'Summer', 'Fall', 'Winter'];
   let season = $derived(SEASONS[(gameStore.turnNumber - 1) % 4]);
   let isWinter = $derived(season === 'Winter');
+  let nextPhase = $derived(gameStore.currentPhase === 'reset' ? 'prospecting' : gameStore.currentPhase === 'prospecting' ? 'operating' : 'reset');
 
   // Turn Action tracking
   let debitBuyClaims = $state<number | null>(null);
@@ -178,12 +179,15 @@
   }
 
   function handleNextPhase() {
+    const wasReset = gameStore.currentPhase === 'reset';
     gameStore.nextPhase();
-    // Reset ready state when advancing to a new turn and sync each player
-    gameStore.players.forEach(p => {
-      p.turnReady = false;
-      savePlayer($state.snapshot(p));
-    });
+    // Only reset ready state when a new turn begins (coming out of reset phase)
+    if (wasReset) {
+      gameStore.players.forEach(p => {
+        p.turnReady = false;
+        savePlayer($state.snapshot(p));
+      });
+    }
     saveGame({
         currentPhase: gameStore.currentPhase,
         turnNumber: gameStore.turnNumber,
@@ -328,17 +332,19 @@
     <!-- Global Game Stats Widget -->
     <div class="card">
       <h3>Game Status</h3>
-      <p><strong>Phase:</strong> {gameStore.currentPhase}</p>
-      <p><strong>Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
+      <p class="game-status-line"><strong>Phase:</strong> {gameStore.currentPhase}</p>
+      <p class="game-status-line"><strong>Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
       {#if gameStore.activePlayerId}
-        <p><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
+        <p class="game-status-line"><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
       {/if}
 
       <div style="margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); padding-top: var(--spacing-md);">
         {#if gameStore.currentPhase === 'setup'}
             <button class="btn btn-primary" style="width: 100%;" onclick={handleStartGame} disabled={gameStore.players.length === 0}>Start Game</button>
+        {:else if gameStore.currentPhase === 'reset'}
+            <button class="btn btn-primary" style="width: 100%;" onclick={handleNextPhase}>Next Turn</button>
         {:else}
-            <button class="btn btn-primary" style="width: 100%;" onclick={handleNextPhase}>Next Phase ({gameStore.currentPhase})</button>
+            <button class="btn btn-primary" style="width: 100%;" onclick={handleNextPhase}>Next Phase ({nextPhase})</button>
         {/if}
       </div>
     </div>
@@ -440,6 +446,10 @@
     background: var(--color-bg-base);
     color: var(--color-text-primary);
     text-align: right;
+  }
+
+  .game-status-line {
+    text-transform: capitalize;
   }
 
   .turn-sequence {
