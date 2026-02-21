@@ -43,8 +43,19 @@
         startingMoney: 1600,
         visibleAmount: 4000,
         gameGoal: 6000,
-        ...((data.history[0]?.state as any)?.config || {})
     });
+
+    $effect(() => {
+        const serverConfig = (data.history[0]?.state as any)?.config;
+        if (serverConfig) {
+            import('svelte').then(({ untrack }) => {
+                untrack(() => {
+                    Object.assign(currentConfig, serverConfig);
+                });
+            });
+        }
+    });
+
     let isSavingConfig = $state(false);
 
     async function saveConfig() {
