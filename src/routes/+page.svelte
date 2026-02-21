@@ -360,7 +360,7 @@
                         New Balance: <strong style="color: {predictedBalance < 0 ? '#ff4d4f' : 'inherit'}">${predictedBalance}</strong>
                     </span>
                 </div>
-                <button class="btn btn-primary" onclick={completeTurn} disabled={predictedBalance < 0}>My Turn Complete</button>
+                <button class="btn btn-primary" onclick={completeTurn} disabled={predictedBalance < 0}>{loggedInPlayer.turnReady ? 'Make Adjustment' : 'My Turn Complete'}</button>
             </div>
         </div>
     {/if}
