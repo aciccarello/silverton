@@ -15,7 +15,11 @@
             const res = await fetch('/api/state/rollback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
+                body: JSON.stringify({ 
+                    id,
+                    lastModifiedBy: 'Admin',
+                    lastModifiedAction: `Rolled back to state #${id}`
+                })
             });
 
             if (res.ok) {
@@ -49,7 +53,11 @@
             const res = await fetch('/api/state/game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ config: currentConfig })
+                body: JSON.stringify({ 
+                    config: currentConfig,
+                    lastModifiedBy: 'Admin',
+                    lastModifiedAction: 'Updated game configuration'
+                })
             });
             if (res.ok) {
                 alert('Configuration updated successfully!');
@@ -67,15 +75,15 @@
 </script>
 
 <svelte:head>
-  <title>Admin - State History</title>
+  <title>Administration</title>
 </svelte:head>
 
 <div class="header">
-    <h1>State History</h1>
+    <h1>Administration</h1>
     <a href="/" class="btn btn-outline">Back to Dashboard</a>
 </div>
 
-<div class="card" style="margin-bottom: var(--spacing-lg);">
+<section class="card" style="margin-bottom: var(--spacing-lg);">
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
         <h2>Game Configuration</h2>
         <button class="btn btn-primary" onclick={saveConfig} disabled={isSavingConfig}>
@@ -97,38 +105,59 @@
             <input type="number" bind:value={currentConfig.gameGoal} />
         </label>
     </div>
-</div>
+</section>
 
-{#if data.history.length === 0}
-    <p>No history available.</p>
-{:else}
-    <div class="history-list animate-entrance">
-        {#each data.history as record, i}
-            <div class="card history-item" style="margin-bottom: var(--spacing-md)">
-                <div class="history-header">
-                    <h3>State #{record.id}</h3>
-                    <span class="timestamp">{new Date(record.timestamp + 'Z').toLocaleString()}</span>
-                </div>
-                <div class="history-body">
-                    <p><strong>Phase:</strong> {(record.state as any)?.currentPhase || 'Unknown'}</p>
-                    <p><strong>Turn:</strong> {(record.state as any)?.turnNumber || 0}</p>
-                    <p><strong>Players:</strong> {(record.state as any)?.players?.length || 0}</p>
-                </div>
-                <div class="history-actions">
-                    <button 
-                        class="btn btn-primary" 
-                        disabled={isRollingBack} 
-                        onclick={() => handleRollback(record.id)}>
-                        Restore this State
-                    </button>
-                    {#if i === 0}
-                        <span style="margin-left: var(--spacing-md); color: var(--color-text-secondary);">(Current State)</span>
-                    {/if}
-                </div>
-            </div>
-        {/each}
+<section class="card">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); padding-bottom: var(--spacing-sm);">
+        <h2>State History</h2>
     </div>
-{/if}
+
+    {#if data.history.length === 0}
+        <p>No history available.</p>
+    {:else}
+        <div class="table-container animate-entrance">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Phase</th>
+                        <th>Turn</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#each data.history as record, i}
+                        <tr class:current-state={i === 0}>
+                            <td>#{record.id}</td>
+                            <td>{new Date(record.timestamp + 'Z').toLocaleString()}</td>
+                            <td>
+                                <span class="user-badge">{(record.state as any)?.lastModifiedBy || 'Unknown'}</span>
+                            </td>
+                            <td class="action-cell">{(record.state as any)?.lastModifiedAction || '-'}</td>
+                            <td style="text-transform: capitalize;">{(record.state as any)?.currentPhase || 'setup'}</td>
+                            <td>{(record.state as any)?.turnNumber || 1}</td>
+                            <td style="text-align: right;">
+                                {#if i === 0}
+                                    <span class="current-label">Active</span>
+                                {:else}
+                                    <button 
+                                        class="btn btn-sm btn-outline" 
+                                        disabled={isRollingBack} 
+                                        onclick={() => handleRollback(record.id)}>
+                                        Restore
+                                    </button>
+                                {/if}
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </div>
+    {/if}
+</section>
 
 <style>
     .header {
@@ -139,26 +168,50 @@
         border-bottom: 2px solid var(--color-border);
         padding-bottom: var(--spacing-md);
     }
-    .history-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        border-bottom: 1px solid var(--color-border);
-        margin-bottom: var(--spacing-sm);
-        padding-bottom: var(--spacing-sm);
+    .table-container {
+        overflow-x: auto;
     }
-    .timestamp {
-        font-family: var(--font-body);
-        color: var(--color-text-secondary);
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
         font-size: 0.9rem;
     }
-    .history-body {
-        display: flex;
-        gap: var(--spacing-lg);
-        margin-bottom: var(--spacing-md);
+    .history-table th, .history-table td {
+        padding: 0.75rem 0.5rem;
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
     }
-    .history-body p {
-        margin: 0;
+    .history-table th {
+        color: var(--color-text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+    .current-state {
+        background: rgba(230, 161, 34, 0.05);
+    }
+    .user-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border);
+        font-size: 0.85rem;
+    }
+    .action-cell {
+        color: var(--color-text-secondary);
+        font-style: italic;
+    }
+    .current-label {
+        color: var(--color-primary);
+        font-weight: bold;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
     }
     .input-group {
         display: flex;

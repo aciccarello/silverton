@@ -8,7 +8,7 @@ export const POST: RequestHandler = async ({ request }) => {
     if (typeof data.id !== 'number') {
         return json({ success: false, error: 'Invalid ID' }, { status: 400 });
     }
-    rollbackTo(data.id);
+      rollbackTo(data.id, data.lastModifiedBy, data.lastModifiedAction);
     return json({ success: true });
   } catch (err: any) {
     return json({ success: false, error: err.message || 'Server Error' }, { status: 500 });

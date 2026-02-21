@@ -37,13 +37,21 @@ export function getHistory(): Array<{ id: number, timestamp: string, state_json:
     return stmt.all() as Array<{ id: number, timestamp: string, state_json: string }>;
 }
 
-export function rollbackTo(id: number) {
+export function rollbackTo(id: number, lastModifiedBy?: string, lastModifiedAction?: string) {
     const stmt = db.prepare('SELECT state_json FROM state_history WHERE id = ?');
     const result = stmt.get(id) as { state_json: string } | undefined;
 
     if (result) {
+        let state: any = {};
+        try {
+            state = JSON.parse(result.state_json);
+        } catch (e) { /* ignore */ }
+
+        if (lastModifiedBy) state.lastModifiedBy = lastModifiedBy;
+        if (lastModifiedAction) state.lastModifiedAction = lastModifiedAction;
+
         // To rollback, we just insert the old state as the new head of history.
-        saveState(result.state_json);
+        saveState(JSON.stringify(state));
     } else {
         throw new Error('Historical state not found');
     }

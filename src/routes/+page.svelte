@@ -22,26 +22,34 @@
     }
   });
 
-  async function savePlayer(player: Player) {
+  async function savePlayer(player: Player, action?: string) {
     if (!browser) return;
     try {
         await fetch('/api/state/player', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(player)
+            body: JSON.stringify({
+                ...player,
+                lastModifiedBy: loggedInPlayer?.name || player.name || 'Unknown',
+                lastModifiedAction: action || 'Updated player state'
+            })
         });
     } catch (err) {
         console.error('Failed to save player state:', err);
     }
   }
 
-  async function saveGame(payload: any) {
+  async function saveGame(payload: any, action?: string) {
     if (!browser) return;
     try {
         await fetch('/api/state/game', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                ...payload,
+                lastModifiedBy: loggedInPlayer?.name || 'System',
+                lastModifiedAction: action || 'Updated game state'
+            })
         });
     } catch (err) {
         console.error('Failed to save game state:', err);
@@ -102,7 +110,7 @@
       logInAs(newPlayerId);
 
       // Async save
-      savePlayer(newPlayer);
+      savePlayer(newPlayer, 'Joined the game');
     }
   }
 
@@ -181,7 +189,7 @@
       dealsAndAdjustments = null;
 
       // Sync player balance and ready state
-      savePlayer($state.snapshot(loggedInPlayer));
+      savePlayer($state.snapshot(loggedInPlayer), 'Completed turn');
     }
   }
 
@@ -196,7 +204,7 @@
     // Assign order (1-indexed) based on shuffled list
     gameStore.players.forEach(p => {
       p.turnOrder = playerIds.indexOf(p.id) + 1;
-      savePlayer($state.snapshot(p));
+      savePlayer($state.snapshot(p), 'Assigned turn order');
     });
   }
 
@@ -211,7 +219,7 @@
         currentPhase: gameStore.currentPhase,
         turnNumber: gameStore.turnNumber,
         activePlayerId: gameStore.activePlayerId
-    });
+    }, 'Started game');
   }
 
   function handleNextPhase() {
@@ -228,7 +236,7 @@
         currentPhase: gameStore.currentPhase,
         turnNumber: gameStore.turnNumber,
         activePlayerId: gameStore.activePlayerId
-    });
+    }, `Advanced to ${gameStore.currentPhase} phase`);
   }
 </script>
 

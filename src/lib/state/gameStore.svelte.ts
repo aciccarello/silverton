@@ -29,6 +29,8 @@ export class GameState {
     currentPhase = $state<GamePhase>('setup');
     turnNumber = $state<number>(1);
     activePlayerId = $state<string | null>(null);
+    lastModifiedBy = $state<string | null>(null);
+    lastModifiedAction = $state<string | null>(null);
 
     // Initial market prices for resources
     marketPrices = $state<Record<Resource, number>>({
@@ -90,6 +92,8 @@ export class GameState {
         if (data.activePlayerId !== undefined) this.activePlayerId = data.activePlayerId;
         if (data.marketPrices) this.marketPrices = data.marketPrices;
         if (data.config) this.config = { ...this.config, ...data.config };
+        if (data.lastModifiedBy !== undefined) this.lastModifiedBy = data.lastModifiedBy;
+        if (data.lastModifiedAction !== undefined) this.lastModifiedAction = data.lastModifiedAction;
     }
 }
 
