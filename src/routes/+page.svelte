@@ -10,6 +10,15 @@
   // Local device authentication state
   let loggedInUserId = $state<string | null>(null);
 
+  const PLAYER_COLORS = [
+    { name: 'Blue', hex: '#3498db' },
+    { name: 'Purple', hex: '#9b59b6' },
+    { name: 'Yellow', hex: '#f1c40f' },
+    { name: 'Green', hex: '#2ecc71' },
+    { name: 'Red', hex: '#e74c3c' },
+    { name: 'White', hex: '#ffffff' }
+  ];
+
   // Load initial server data into store in an effect to avoid the state_referenced_locally warning
   $effect(() => {
     if (data.initialGameState) {
@@ -201,6 +210,13 @@
     }
   }
 
+  function updatePlayerColor(color: string) {
+    if (loggedInPlayer) {
+      loggedInPlayer.color = color;
+      savePlayer($state.snapshot(loggedInPlayer), `Changed color to ${color}`);
+    }
+  }
+
   function assignTurnOrder() {
     const playerIds = gameStore.players.map(p => p.id);
     // Shuffle the player IDs
@@ -325,7 +341,20 @@
         <div class="card" style="border-top: 4px solid {loggedInPlayer.color}; grid-column: 1 / -1;">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md);">
                 <h2>Your balance</h2>
-                <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                  <div style="display: flex; gap: 8px;">
+                    {#each PLAYER_COLORS as color}
+                      <button 
+                        class="color-swatch" 
+                        style="background-color: {color.hex}; border-color: {loggedInPlayer.color === color.hex ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)'};"
+                        title={color.name}
+                        onclick={() => updatePlayerColor(color.hex)}
+                        aria-label="Select {color.name} color"
+                      ></button>
+                    {/each}
+                  </div>
+                  <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
+                </div>
             </div>
         </div>
 
@@ -617,5 +646,24 @@
   .winning-money {
     font-weight: bold;
     color: var(--color-primary);
+  }
+
+  .color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    padding: 0;
+  }
+
+  .color-swatch:hover {
+    transform: scale(1.2);
+  }
+
+  .color-swatch:focus {
+    outline: none;
+    border-color: var(--color-primary);
   }
 </style>
