@@ -206,13 +206,6 @@
     font-size: 0.85rem;
   }
 
-  .dice-type {
-    font-family: var(--font-display);
-    font-weight: 500;
-    color: var(--color-primary);
-    opacity: 0.8;
-  }
-
   .results-col {
     width: 120px;
   }
