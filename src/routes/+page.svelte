@@ -145,6 +145,12 @@
   );
 
   let predictedBalance = $derived(loggedInPlayer ? loggedInPlayer.money + netChange : 0);
+  
+  let sortedPlayers = $derived([...gameStore.players].sort((a, b) => {
+    if (a.turnOrder === undefined) return 1;
+    if (b.turnOrder === undefined) return -1;
+    return a.turnOrder - b.turnOrder;
+  }));
 
   function completeTurn() {
     if (loggedInPlayer) {
@@ -164,12 +170,27 @@
     }
   }
 
-  function handleStartGame() {
-    // Reset ready state on all players and sync each one
+  function assignTurnOrder() {
+    const playerIds = gameStore.players.map(p => p.id);
+    // Shuffle the player IDs
+    for (let i = playerIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
+    }
+    
+    // Assign order (1-indexed) based on shuffled list
     gameStore.players.forEach(p => {
-      p.turnReady = false;
+      p.turnOrder = playerIds.indexOf(p.id) + 1;
       savePlayer($state.snapshot(p));
     });
+  }
+
+  function handleStartGame() {
+    // Reset ready state and assign random turn order on all players
+    gameStore.players.forEach(p => {
+      p.turnReady = false;
+    });
+    assignTurnOrder();
     gameStore.startGame();
     saveGame({
         currentPhase: gameStore.currentPhase,
@@ -181,12 +202,12 @@
   function handleNextPhase() {
     const wasReset = gameStore.currentPhase === 'reset';
     gameStore.nextPhase();
-    // Only reset ready state when a new turn begins (coming out of reset phase)
+    // Reset ready state and re-shuffle turn order when a new turn begins
     if (wasReset) {
       gameStore.players.forEach(p => {
         p.turnReady = false;
-        savePlayer($state.snapshot(p));
       });
+      assignTurnOrder();
     }
     saveGame({
         currentPhase: gameStore.currentPhase,
@@ -203,7 +224,7 @@
 
 <div class="hero animate-entrance">
   <h1>Silverton</h1>
-  <p class="subtitle stagger-1">Board Game State Manager</p>
+  <p class="subtitle stagger-1">Board Game Tracker</p>
   
   <div class="actions stagger-2">
     {#if loggedInPlayer}
@@ -332,10 +353,20 @@
     <!-- Global Game Stats Widget -->
     <div class="card">
       <h3>Game Status</h3>
-      <p class="game-status-line"><strong>Phase:</strong> {gameStore.currentPhase}</p>
-      <p class="game-status-line"><strong>Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
+      <p class="game-status-line"><strong>Game Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
+      <p class="game-status-line"><strong>Turn Phase:</strong> {gameStore.currentPhase}</p>
       {#if gameStore.activePlayerId}
         <p class="game-status-line"><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
+      {/if}
+      
+      {#if loggedInPlayer?.turnOrder}
+        <div style="margin-top: var(--spacing-sm);">
+          <strong>Turn Order:</strong> 
+          {loggedInPlayer.turnOrder}
+            <span style="font-size: 0.9rem; color: var(--color-text-secondary);">
+              ({sortedPlayers.filter((p, index) => index + 1 == loggedInPlayer?.turnOrder || index + 2 == loggedInPlayer?.turnOrder).map(p => p.name).join(' → ')})
+            </span>
+        </div>
       {/if}
 
       <div style="margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); padding-top: var(--spacing-md);">
@@ -378,10 +409,11 @@
             <p>No players added yet.</p>
         {:else}
             <ul style="list-style-type: none; padding: 0;">
-                {#each gameStore.players as player}
+                {#each sortedPlayers as player}
                     <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
                         <span style="display: flex; align-items: center; gap: 8px;">
                             <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
+                            {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
                             <strong>{player.name}</strong> 
                             {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
                             {#if player.turnReady}

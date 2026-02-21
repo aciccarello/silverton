@@ -8,6 +8,7 @@ export interface Player {
     claims: number;
     score: number;
     turnReady?: boolean;
+    turnOrder?: number;
 }
 
 export type GamePhase = 'setup' | 'prospecting' | 'operating' | 'reset' | 'end';
