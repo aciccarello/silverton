@@ -208,6 +208,28 @@ a:hover {
 .stagger-2 { animation-delay: 200ms; }
 .stagger-3 { animation-delay: 300ms; }
 
+/* Dice Animations */
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.animate-shake {
+  animation: shake 0.5s infinite;
+}
+
 /* Dashboard layout specific */
 .dashboard-grid {
   display: grid;

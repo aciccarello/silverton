@@ -1,6 +1,7 @@
 <script lang="ts">
   import { gameStore } from '$lib/state/gameStore.svelte';
   import { confirmStore } from '$lib/state/confirmStore.svelte';
+  import Dice from '$lib/components/Dice.svelte';
   import { onMount, untrack } from 'svelte';
   import { browser } from '$app/environment';
   import type { PageData } from './$types';
@@ -12,6 +13,12 @@
   let loggedInUserId = $state<string | null>(null);
   let mounted = $state(false);
   let isColorDropdownOpen = $state(false);
+
+  // Claim Rolling State
+  let claimRollResults = $state<number[]>([]);
+  let isClaimRolling = $state(false);
+  let claimRollTotal = $state<number | null>(null);
+  let claimRollType = $state<'Initial' | 'Normal' | null>(null);
 
   const PLAYER_COLORS = [
     { name: 'Blue', hex: '#3498db' },
@@ -287,6 +294,26 @@
     }
   }
 
+  async function rollClaim(type: 'Initial' | 'Normal') {
+    if (isClaimRolling) return;
+    
+    isClaimRolling = true;
+    claimRollType = type;
+    claimRollResults = [];
+    claimRollTotal = null;
+
+    // Simulate rolling delay
+    await new Promise(r => setTimeout(r, 600));
+
+    const diceCount = type === 'Initial' ? 1 : 2;
+    const results = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+    
+    claimRollResults = results;
+    const sum = results.reduce((a, b) => a + b, 0);
+    claimRollTotal = type === 'Initial' ? sum + 6 : sum;
+    isClaimRolling = false;
+  }
+
   function assignTurnOrder() {
     const playerIds = gameStore.players.map(p => p.id);
     // Shuffle the player IDs
@@ -524,6 +551,104 @@
             </div>
         </div>
     {/if}
+    
+    <div class="card">
+      <h3>Turn Sequence</h3>
+      <ol class="turn-sequence">
+        <li>Deal Turn Order Cards</li>
+        <li class:active-step={gameStore.currentPhase === 'prospecting'}>Prospect &amp; Survey</li>
+        <li class:active-step={gameStore.currentPhase === 'prospecting'}>Resolve Disputes</li>
+        <li class:active-step={gameStore.currentPhase === 'operating'}>Construction &amp; Operation
+          <ol>
+            <li>Buy Claims/Contracts</li>
+            <li>Build Track</li>
+            <li>Operate Claims</li>
+            <li>Make Deals</li>
+            <li>Collect Passenger Revenue</li>
+            <li>Deliver Loads</li>
+            <li>Pay Fines</li>
+          </ol>
+        </li>
+        <li class:active-step={gameStore.currentPhase === 'reset'}>Determine Price Changes</li>
+        <li class:active-step={gameStore.currentPhase === 'reset'}>Replenish Cards</li>
+        <li class:active-step={gameStore.currentPhase === 'reset'}>Advance Game Turn</li>
+      </ol>
+    </div>
+
+    <!-- Roll to Operate Claim Widget -->
+    <div class="card animate-entrance">
+      <h3>Roll to Operate Claim</h3>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) 0;">
+        <Dice results={claimRollResults} isRolling={isClaimRolling} diceCount={claimRollType === 'Initial' ? 1 : 2}>
+          <p class="placeholder" style="margin: 0;">Select roll type to start</p>
+        </Dice>
+
+        {#if claimRollTotal !== null && !isClaimRolling}
+          <div class="animate-bounce-in" style="text-align: center;">
+            <div style="text-transform: uppercase; font-size: 0.75rem; color: var(--color-text-secondary); letter-spacing: 0.1em; margin-bottom: 2px;">
+              {claimRollType} Roll Total
+            </div>
+            <div style="font-size: 2.5rem; font-family: var(--font-heading); color: var(--color-primary); line-height: 1;">
+              {claimRollTotal}
+            </div>
+            {#if claimRollType === 'Initial'}
+              <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 4px;">
+                ({claimRollResults[0]} + 6)
+              </div>
+            {/if}
+          </div>
+        {/if}
+
+        <div style="display: flex; gap: var(--spacing-sm); width: 100%; margin-top: var(--spacing-sm); flex-wrap: wrap;">
+          <button 
+            class="btn btn-sm btn-outline" 
+            style="flex: 1 1 120px;" 
+            onclick={() => rollClaim('Initial')}
+            disabled={isClaimRolling}
+          >
+            Initial (1d+6)
+          </button>
+          <button 
+            class="btn btn-sm btn-outline" 
+            style="flex: 1 1 120px;" 
+            onclick={() => rollClaim('Normal')}
+            disabled={isClaimRolling}
+          >
+            Normal (2d)
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+        <h3>All Players ({gameStore.players.length})</h3>
+        {#if gameStore.players.length === 0}
+            <p>No players added yet.</p>
+        {:else}
+            <ul style="list-style-type: none; padding: 0;">
+                {#each sortedPlayers as player}
+                    <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
+                            {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
+                            <strong>{player.name}</strong> 
+                            {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
+                            {#if player.turnReady && !winner}
+                                <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
+                            {/if}
+                        </span>
+                        <span class:winning-money={player.id === winner?.id}>
+                            {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId || winner}
+                                ${player.money}
+                            {:else}
+                                <span style="color: var(--color-text-secondary); font-style: italic;">Hidden</span>
+                            {/if}
+                        </span>
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+    </div>
 
     <!-- Global Game Stats Widget -->
     <div class="card">
@@ -556,59 +681,6 @@
             <button class="btn btn-primary" style="width: 100%;" onclick={handleNextPhase}>Next Phase ({nextPhase})</button>
         {/if}
       </div>
-    </div>
-    
-    <div class="card">
-      <h3>Turn Sequence</h3>
-      <ol class="turn-sequence">
-        <li>Deal Turn Order Cards</li>
-        <li class:active-step={gameStore.currentPhase === 'prospecting'}>Prospect &amp; Survey</li>
-        <li class:active-step={gameStore.currentPhase === 'prospecting'}>Resolve Disputes</li>
-        <li class:active-step={gameStore.currentPhase === 'operating'}>Construction &amp; Operation
-          <ol>
-            <li>Buy Claims/Contracts</li>
-            <li>Build Track</li>
-            <li>Operate Claims</li>
-            <li>Make Deals</li>
-            <li>Collect Passenger Revenue</li>
-            <li>Deliver Loads</li>
-            <li>Pay Fines</li>
-          </ol>
-        </li>
-        <li class:active-step={gameStore.currentPhase === 'reset'}>Determine Price Changes</li>
-        <li class:active-step={gameStore.currentPhase === 'reset'}>Replenish Cards</li>
-        <li class:active-step={gameStore.currentPhase === 'reset'}>Advance Game Turn</li>
-      </ol>
-    </div>
-
-    <div class="card">
-        <h3>All Players ({gameStore.players.length})</h3>
-        {#if gameStore.players.length === 0}
-            <p>No players added yet.</p>
-        {:else}
-            <ul style="list-style-type: none; padding: 0;">
-                {#each sortedPlayers as player}
-                    <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
-                            {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
-                            <strong>{player.name}</strong> 
-                            {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
-                            {#if player.turnReady && !winner}
-                                <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
-                            {/if}
-                        </span>
-                        <span class:winning-money={player.id === winner?.id}>
-                            {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId || winner}
-                                ${player.money}
-                            {:else}
-                                <span style="color: var(--color-text-secondary); font-style: italic;">Hidden</span>
-                            {/if}
-                        </span>
-                    </li>
-                {/each}
-            </ul>
-        {/if}
     </div>
 
     <div class="card" style="grid-column: 1 / -1;">
