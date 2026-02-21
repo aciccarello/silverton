@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { PageData } from './$types';
-  import type { Player } from '$lib/state/gameStore.svelte';
+  import type { Player, TurnHistoryEntry } from '$lib/state/gameStore.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -154,6 +154,21 @@
 
   function completeTurn() {
     if (loggedInPlayer) {
+      // Record turn history entry
+      const historyEntry: TurnHistoryEntry = {
+        turn: gameStore.turnNumber,
+        season,
+        phase: gameStore.currentPhase,
+        netChange,
+        balance: predictedBalance,
+        timestamp: new Date().toISOString()
+      };
+      
+      if (!loggedInPlayer.history) {
+        loggedInPlayer.history = [];
+      }
+      loggedInPlayer.history.push(historyEntry);
+
       loggedInPlayer.money = predictedBalance;
       loggedInPlayer.turnReady = true;
       
@@ -431,6 +446,44 @@
                 {/each}
             </ul>
         {/if}
+    </div>
+
+    <div class="card" style="grid-column: 1 / -1;">
+      <h3>Your Turn History</h3>
+      {#if !loggedInPlayer?.history || loggedInPlayer.history.length === 0}
+        <p>No turns completed yet.</p>
+      {:else}
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--color-border); text-align: left;">
+                <th style="padding: 0.5rem;">Turn</th>
+                <th style="padding: 0.5rem;">Season</th>
+                <th style="padding: 0.5rem;">Phase</th>
+                <th style="padding: 0.5rem;">Change</th>
+                <th style="padding: 0.5rem;">New Balance</th>
+                <th style="padding: 0.5rem; text-align: right;">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each [...loggedInPlayer.history].reverse() as entry}
+                <tr style="border-bottom: 1px solid var(--color-border); font-size: 0.9rem;">
+                  <td style="padding: 0.5rem;">{entry.turn}</td>
+                  <td style="padding: 0.5rem;">{entry.season}</td>
+                  <td style="padding: 0.5rem; text-transform: capitalize;">{entry.phase}</td>
+                  <td style="padding: 0.5rem; color: {entry.netChange >= 0 ? 'var(--color-primary)' : '#ff5252'}">
+                    {entry.netChange >= 0 ? '+' : ''}{entry.netChange}
+                  </td>
+                  <td style="padding: 0.5rem;">${entry.balance}</td>
+                  <td style="padding: 0.5rem; text-align: right; color: var(--color-text-secondary); font-size: 0.8rem;">
+                    {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
     </div>
   </div>
 {/if}

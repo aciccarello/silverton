@@ -1,5 +1,15 @@
 export type Resource = 'gold' | 'silver' | 'copper' | 'coal' | 'lumber';
 
+export interface TurnHistoryEntry {
+    turn: number;
+    season: string;
+    phase: string;
+    netChange: number;
+    balance: number;
+    timestamp: string;
+}
+
+
 export interface Player {
     id: string;
     name: string;
@@ -9,6 +19,7 @@ export interface Player {
     score: number;
     turnReady?: boolean;
     turnOrder?: number;
+    history?: TurnHistoryEntry[];
 }
 
 export type GamePhase = 'setup' | 'prospecting' | 'operating' | 'reset' | 'end';
