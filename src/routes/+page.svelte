@@ -107,7 +107,7 @@
   function handleAddPlayer() {
     if (newPlayerName.trim()) {
       // Pick random color from a preset list
-      const colors = ['#e6a122', '#a83c32', '#326da8', '#32a852'];
+      const colors = PLAYER_COLORS.map(c => c.hex);
       const color = colors[gameStore.players.length % colors.length];
       
       const newPlayerId = Math.random().toString(36).substring(2, 9);
@@ -660,9 +660,6 @@
     {/if}
       <p class="game-status-line"><strong>Game Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
       <p class="game-status-line"><strong>Turn Phase:</strong> {gameStore.currentPhase}</p>
-      {#if gameStore.activePlayerId}
-        <p class="game-status-line"><strong>Active Player:</strong> {gameStore.players.find(p => p.id === gameStore.activePlayerId)?.name}</p>
-      {/if}
       
       {#if loggedInPlayer?.turnOrder}
         <div style="margin-top: var(--spacing-sm);">
@@ -674,8 +671,8 @@
         </div>
       {/if}
 
-      <p>Everyone ready to move forward?</p>
       <div style="margin-top: var(--spacing-md); border-top: 1px solid var(--color-border); padding-top: var(--spacing-md);">
+        <p>Everyone ready to move forward?</p>
         {#if gameStore.currentPhase === 'setup'}
             <button class="btn btn-primary" style="width: 100%;" onclick={handleStartGame} disabled={gameStore.players.length === 0}>Start Game</button>
         {:else if gameStore.currentPhase === 'reset'}
