@@ -93,7 +93,6 @@
 
 <div class="header">
     <h1>Administration</h1>
-    <a href="/" class="btn btn-outline">Back to Dashboard</a>
 </div>
 
 <section class="card" style="margin-bottom: var(--spacing-lg);">
