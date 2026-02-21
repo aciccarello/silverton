@@ -1,6 +1,8 @@
 # Silverton Board Game Tracker
 
-Silverton is a modern, high-performance web application designed to track sessions of the classic board game *Silverton*. It manages player accounts, real-time game state, turn history, and complex calculations for a smooth gaming experience.
+Silverton is a custom-built web application designed to track sessions of the classic board game *Silverton*. It manages player accounts, real-time game state, turn history, and complex calculations for a smooth gaming experience.
+
+![Screenshot of the app showing balance adjustments, turn tracking, and dice rolling.](/docs/silverton_dashboard.png)
 
 ## ✨ Features
 
@@ -19,6 +21,8 @@ Silverton is a modern, high-performance web application designed to track sessio
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Database**: SQLite (managed via local.db)
+
+The initial version of this app was built with AI using Google's Antigravity IDE.
 
 ## 🚀 Getting Started
 
@@ -48,15 +52,19 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:5173`.
+Note that the dev server may cause the page to refresh.
+For local play, use the `preview` command.
 
-### Building
+### Running locally
 
-To create a production version of your app:
+Create a production build of the app and then run the preview server.
+
 ```sh
 npm run build
+npm run preview
 ```
 
-You can preview the production build with `npm run preview`.
+The application will be available at `http://localhost:4173`.
 
 ## 📂 Architecture
 
