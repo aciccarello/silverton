@@ -576,30 +576,32 @@
     </div>
 
     <!-- Roll to Operate Claim Widget -->
-    <div class="card animate-entrance">
+    <div class="card roll-card animate-entrance">
       <h3>Roll to Operate Claim</h3>
-      <div style="display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) 0;">
-        <Dice results={claimRollResults} isRolling={isClaimRolling} diceCount={claimRollType === 'Initial' ? 1 : 2}>
-          <p class="placeholder" style="margin: 0;">Select roll type to start</p>
-        </Dice>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) 0; flex: 1;">
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-md); width: 100%;">
+          <Dice results={claimRollResults} isRolling={isClaimRolling} diceCount={claimRollType === 'Initial' ? 1 : 2}>
+            <p class="placeholder" style="margin: 0;">Select roll type to start</p>
+          </Dice>
 
-        {#if claimRollTotal !== null && !isClaimRolling}
-          <div class="animate-bounce-in" style="text-align: center;">
-            <div style="text-transform: uppercase; font-size: 0.75rem; color: var(--color-text-secondary); letter-spacing: 0.1em; margin-bottom: 2px;">
-              {claimRollType} Roll Total
-            </div>
-            <div style="font-size: 2.5rem; font-family: var(--font-heading); color: var(--color-primary); line-height: 1;">
-              {claimRollTotal}
-            </div>
-            {#if claimRollType === 'Initial'}
-              <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 4px;">
-                ({claimRollResults[0]} + 6)
+          {#if claimRollTotal !== null && !isClaimRolling}
+            <div class="animate-bounce-in" style="text-align: center;">
+              <div style="text-transform: uppercase; font-size: 0.75rem; color: var(--color-text-secondary); letter-spacing: 0.1em; margin-bottom: 2px;">
+                {claimRollType} Roll Total
               </div>
-            {/if}
-          </div>
-        {/if}
+              <div style="font-size: 2.5rem; font-family: var(--font-heading); color: var(--color-primary); line-height: 1;">
+                {claimRollTotal}
+              </div>
+              {#if claimRollType === 'Initial'}
+                <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 4px;">
+                  ({claimRollResults[0]} + 6)
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
 
-        <div style="display: flex; gap: var(--spacing-sm); width: 100%; margin-top: var(--spacing-sm); flex-wrap: wrap;">
+        <div style="display: flex; gap: var(--spacing-sm); width: 100%; margin-top: auto; flex-wrap: wrap;">
           <button 
             class="btn btn-sm btn-outline" 
             style="flex: 1 1 120px;" 
@@ -826,6 +828,12 @@
   .winning-money {
     font-weight: bold;
     color: var(--color-primary);
+  }
+
+  .roll-card {
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Color Picker Dropdown Styles */
