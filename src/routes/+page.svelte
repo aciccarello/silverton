@@ -1,7 +1,7 @@
 <script lang="ts">
   import { gameStore } from '$lib/state/gameStore.svelte';
   import { confirmStore } from '$lib/state/confirmStore.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { browser } from '$app/environment';
   import type { PageData } from './$types';
   import type { Player, TurnHistoryEntry } from '$lib/state/gameStore.svelte';
@@ -10,6 +10,7 @@
 
   // Local device authentication state
   let loggedInUserId = $state<string | null>(null);
+  let mounted = $state(false);
 
   const PLAYER_COLORS = [
     { name: 'Blue', hex: '#3498db' },
@@ -20,17 +21,21 @@
     { name: 'White', hex: '#ffffff' }
   ];
 
-  // Load initial server data into store in an effect to avoid the state_referenced_locally warning
-  $effect(() => {
+  // Load initial server data into store
+  untrack(() => {
     if (data.initialGameState) {
-      // Use untrack so we don't accidentally re-run this if something inside initialGameState were to theoretically change
-      import('svelte').then(({ untrack }) => {
-        untrack(() => {
-          gameStore.loadFromJson(data.initialGameState);
-        });
-      });
+      gameStore.loadFromJson(data.initialGameState);
     }
   });
+
+  // Restore session synchronously on client
+  if (browser) {
+    const storedId = localStorage.getItem('silverton_active_user_id');
+    if (storedId && gameStore.players.some(p => p.id === storedId)) {
+      loggedInUserId = storedId;
+      loadTurnActionsFromLocal();
+    }
+  }
 
   async function savePlayer(player: Player, action?: string) {
     if (!browser) return;
@@ -66,16 +71,10 @@
     }
   }
 
-  onMount(() => {
-    // Check if we already have an active session logged into local storage
-    if (browser) {
-      const storedId = localStorage.getItem('silverton_active_user_id');
-      if (storedId && gameStore.players.some(p => p.id === storedId)) {
-        loggedInUserId = storedId;
-        loadTurnActionsFromLocal();
-      }
-    }
 
+
+  onMount(() => {
+    mounted = true;
     // Poll the server every 5 seconds to keep game state in sync across players
     const POLL_INTERVAL_MS = 5_000;
     const intervalId = setInterval(async () => {
@@ -365,9 +364,10 @@
   </div>
 {/if}
 
-{#if !loggedInUserId}
-  <!-- LOGIN VIEW -->
-  <div class="dashboard-grid animate-entrance stagger-3" style="max-width: 600px; margin: 0 auto;">
+{#if mounted}
+  {#if !loggedInUserId}
+    <!-- LOGIN VIEW -->
+    <div class="dashboard-grid animate-entrance stagger-3" style="max-width: 600px; margin: 0 auto;">
     <div class="card" style="text-align: center;">
       <h2>Join Game</h2>
       
@@ -626,6 +626,7 @@
       {/if}
     </div>
   </div>
+{/if}
 {/if}
 
 <style>
