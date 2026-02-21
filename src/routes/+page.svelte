@@ -11,6 +11,7 @@
   // Local device authentication state
   let loggedInUserId = $state<string | null>(null);
   let mounted = $state(false);
+  let isColorDropdownOpen = $state(false);
 
   const PLAYER_COLORS = [
     { name: 'Blue', hex: '#3498db' },
@@ -417,19 +418,41 @@
         <div class="card" style="border-top: 4px solid {loggedInPlayer.color}; grid-column: 1 / -1;">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md);">
                 <h2>Your balance</h2>
-                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
-                  <div style="display: flex; gap: 8px;">
-                    {#each PLAYER_COLORS as color}
-                      <button 
-                        class="color-swatch" 
-                        style="background-color: {color.hex}; border-color: {loggedInPlayer.color === color.hex ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)'};"
-                        title={color.name}
-                        onclick={() => updatePlayerColor(color.hex)}
-                        aria-label="Select {color.name} color"
-                      ></button>
-                    {/each}
-                  </div>
+                <div style="display: flex; align-items: baseline; gap: var(--spacing-md); flex-wrap: wrap;">
                   <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
+                  
+                  <!-- Color Picker Dropdown -->
+                  <div class="color-picker-container">
+                    <button 
+                      class="color-picker-trigger" 
+                      onclick={() => isColorDropdownOpen = !isColorDropdownOpen}
+                      style="border-color: {loggedInPlayer.color};"
+                    >
+                      <div class="swatch-preview" style="background-color: {loggedInPlayer.color};"></div>
+                      <span class="color-name">{PLAYER_COLORS.find(c => c.hex === loggedInPlayer?.color)?.name || 'Custom'}</span>
+                      <span class="chevron" class:open={isColorDropdownOpen}>▼</span>
+                    </button>
+
+                    {#if isColorDropdownOpen}
+                      <div class="color-dropdown-menu card animate-entrance">
+                        {#each PLAYER_COLORS as color}
+                          <button 
+                            class="color-dropdown-item" 
+                            onclick={() => { 
+                              updatePlayerColor(color.hex); 
+                              isColorDropdownOpen = false; 
+                            }}
+                          >
+                            <div class="color-swatch-sm" style="background-color: {color.hex};"></div>
+                            <span>{color.name}</span>
+                            {#if loggedInPlayer.color === color.hex}
+                              <span class="check">✓</span>
+                            {/if}
+                          </button>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
                 </div>
             </div>
         </div>
@@ -733,22 +756,98 @@
     color: var(--color-primary);
   }
 
-  .color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 2px solid transparent;
+  /* Color Picker Dropdown Styles */
+  .color-picker-container {
+    position: relative;
+    user-select: none;
+  }
+
+  .color-picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--color-bg-elevated);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s ease;
-    padding: 0;
+    transition: all var(--transition-fast);
   }
 
-  .color-swatch:hover {
-    transform: scale(1.2);
-  }
-
-  .color-swatch:focus {
-    outline: none;
+  .color-picker-trigger:hover {
     border-color: var(--color-primary);
+    background: var(--color-bg-surface);
+  }
+
+  .swatch-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .color-name {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .chevron {
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    transition: transform var(--transition-fast);
+  }
+
+  .chevron.open {
+    transform: rotate(180deg);
+  }
+
+  .color-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 100;
+    width: 180px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .color-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+  }
+
+  .color-dropdown-item:hover {
+    background: rgba(230, 161, 34, 0.1);
+  }
+
+  .color-swatch-sm {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .check {
+    margin-left: auto;
+    color: var(--color-primary);
+    font-weight: bold;
   }
 </style>
