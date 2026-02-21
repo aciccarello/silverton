@@ -349,12 +349,12 @@
   <h1>Silverton</h1>
   <p class="subtitle stagger-1">Board Game Tracker</p>
   
-  <div class="actions stagger-2">
-    {#if loggedInPlayer}
-        <button class="btn btn-outline" style="border-color: {loggedInPlayer.color}; color: {loggedInPlayer.color}; pointer-events: none;">Welcome, {loggedInPlayer.name}</button>
-        <button class="btn btn-outline" onclick={logOut}>Log Out</button>
-    {/if}
-  </div>
+  {#if loggedInPlayer}
+    <div class="actions animate-entrance stagger-2">
+      <button class="btn btn-outline" style="border-color: {loggedInPlayer.color}; color: {loggedInPlayer.color}; pointer-events: none;">Welcome, {loggedInPlayer.name}</button>
+      <button class="btn btn-outline" onclick={logOut}>Log Out</button>
+    </div>
+  {/if}
 </div>
 
 {#if winner}
