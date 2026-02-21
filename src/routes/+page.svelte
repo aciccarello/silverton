@@ -160,6 +160,14 @@
     return a.turnOrder - b.turnOrder;
   }));
 
+  let winner = $derived.by(() => {
+    const goal = gameStore.config.gameGoal;
+    const candidates = gameStore.players.filter(p => p.money >= goal);
+    if (gameStore.currentPhase == 'operating' || candidates.length === 0) return null;
+    // Sort by money descending and take the first one
+    return [...candidates].sort((a, b) => b.money - a.money)[0];
+  });
+
   function completeTurn() {
     if (loggedInPlayer) {
       // Record turn history entry
@@ -256,6 +264,14 @@
     {/if}
   </div>
 </div>
+
+{#if winner}
+  <div class="card victory-banner animate-entrance">
+    <h2>🎉 Victory! 🎉</h2>
+    <p><strong>{winner.name}</strong> has reached the game goal with <strong>${winner.money}</strong>!</p>
+    <p class="subtitle" style="font-size: 1rem; margin-top: 0.5rem; color: var(--color-text-secondary);">Congratulations on your incredible luck in Silverton!</p>
+  </div>
+{/if}
 
 {#if !loggedInUserId}
   <!-- LOGIN VIEW -->
@@ -376,6 +392,9 @@
     <!-- Global Game Stats Widget -->
     <div class="card">
       <h3>Game Status</h3>
+    {#if winner}
+      <p class="game-status-line"><strong>Winner:</strong> {winner.name} 🎉</p>
+    {/if}
       <p class="game-status-line"><strong>Game Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
       <p class="game-status-line"><strong>Turn Phase:</strong> {gameStore.currentPhase}</p>
       {#if gameStore.activePlayerId}
@@ -439,12 +458,12 @@
                             {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
                             <strong>{player.name}</strong> 
                             {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
-                            {#if player.turnReady}
+                            {#if player.turnReady && !winner}
                                 <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
                             {/if}
                         </span>
-                        <span>
-                            {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId}
+                        <span class:winning-money={player.id === winner?.id}>
+                            {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId || winner}
                                 ${player.money}
                             {:else}
                                 <span style="color: var(--color-text-secondary); font-style: italic;">Hidden</span>
@@ -514,7 +533,29 @@
   .subtitle {
     font-size: 1.5rem;
     color: var(--color-text-secondary);
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
+    font-weight: 300;
+  }
+
+  .victory-banner {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(230, 161, 34, 0.15) 0%, rgba(230, 161, 34, 0.05) 100%);
+    border: 2px solid var(--color-primary);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: 0 10px 30px rgba(230, 161, 34, 0.2);
+  }
+
+  .victory-banner h2 {
+    font-size: 2.5rem;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .victory-banner p {
+    font-size: 1.25rem;
     margin-bottom: var(--spacing-lg);
   }
   
@@ -569,6 +610,11 @@
   }
 
   .turn-sequence .active-step {
+    font-weight: bold;
+    color: var(--color-primary);
+  }
+
+  .winning-money {
     font-weight: bold;
     color: var(--color-primary);
   }
