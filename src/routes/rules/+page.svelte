@@ -4,6 +4,12 @@
 </svelte:head>
 
 <div class="card animate-entrance">
+  <h2>Game Overview</h2>
+  <p>
+	Set in the historic mining areas of Colorado, New Mexico, and Utah, Silverton is a game of railroading, mining, and commodity market manipulation.
+	Use your surveyor to plot your railroads and your prospector to find your mines.
+	Operate your empire of mines and railroads to position your gold, silver, and other commodities in the right market and at the right time to reap maximum profit.
+  </p>
   <h2>Official Resources</h2>
   <ul>
     <li><a href="https://board-game-rules.com/wp-content/uploads/2025/01/silverton_Official-Rules.pdf" target="_blank" rel="noopener noreferrer">Silverton Official Rules PDF</a></li>
@@ -14,10 +20,9 @@
   <ul>
     <li>Shuffle claims, deal 8 face up</li>
     <li>Shuffle each sub-deck of passenger contracts. Deal 8 "C" cards face down, 8 "B" cards face down on top of them, 8 "A" cards face UP on top of them</li>
-    <li>Shuffle turn orders, deal these out. This determines where each person starts from, based on the first page in the manual</li>
-    <li>Grab 5 small bowls to help manage all the resource chips</li>
-    <li>Each player grabs a color bag and goes through Starting Steps on the left</li>
-    <li>The first page in the manual also details which surveyors and prospectors each player gets, based on their turn orders. The rest go back into their bag</li>
+    <li>Place the resource chips in 5 small bowls</li>
+    <li>Each player selects a color bag</li>
+    <li>Once the game starting order has been assigned, each player should locate the surveyors and prospectors assigned to their position. The rest go back into their bag</li>
   </ul>
 
   <h2>Helpful Game Notes</h2>
