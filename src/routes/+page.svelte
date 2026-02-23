@@ -511,7 +511,7 @@
         <div class="card" style="grid-column: 1 / -1;">
           <h3>Turn Actions</h3>
           {#if isWinter}
-            <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9; display: flex; align-items: center; gap: 8px;">
+            <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9;">
             ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries/passenger rail this turn.
             </div>
           {/if}
@@ -561,6 +561,20 @@
           </div>
 
           <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+			<div>
+				<span style="font-size: 1.1rem; font-weight: bold; color: var(--color-primary);">
+				Current Phase:
+				</span>
+				<span style="margin-left: 0.5rem; color: var(--color-text-secondary);">
+				{#if gameStore.currentPhase === 'prospecting'}
+					Prospect & Survey, Resolve Disputes
+				{:else if gameStore.currentPhase === 'operating'}
+					Buy, Operate, Build, Deliver, Sell
+				{:else if gameStore.currentPhase === 'reset'}
+					Replenish Cards, Price Changes, Advance Turn
+				{/if}
+				</span>
+			</div>
             <div>
               <span style="font-size: 0.9rem; color: var(--color-text-secondary); margin-right: var(--spacing-md); display: inline-block;">
                 Net Change: <strong style="color: {netChange > 0 ? 'var(--color-primary)' : netChange < 0 ? '#ff4d4f' : 'inherit'}">{netChange > 0 ? '+' : ''}{netChange}</strong>
@@ -571,7 +585,7 @@
             </div>
             <div class="btn-container">
 			  <button class="btn btn-primary" onclick={doneProspecting} disabled={loggedInPlayer?.prospectReady || gameStore.currentPhase !== 'prospecting'}>I'm Done Prospecting</button>
-              <button class="btn btn-primary" onclick={doneOperating} disabled={predictedBalance < 0 || isOperatingLocked}>{loggedInPlayer?.operateReady ? "Make Adjustment" : "I'm Done Operating"}</button>
+              <button class="btn btn-primary" onclick={doneOperating} disabled={predictedBalance < 0 || gameStore.currentPhase === 'prospecting'}>{loggedInPlayer?.operateReady ? "Make Adjustment" : "I'm Done Operating"}</button>
             </div>
           </div>
         </div>

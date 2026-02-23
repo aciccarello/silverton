@@ -190,7 +190,7 @@ a:hover {
 	display: flex;
 	gap: var(--spacing-sm);
 	width: 100%;
-	margin-top: auto;
+	margin-top: var(--spacing-sm);
 	flex-wrap: wrap;
 
 	.btn {
