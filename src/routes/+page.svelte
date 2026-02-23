@@ -46,8 +46,6 @@
     }
   }
 
-  let isOperatingLocked = $derived(gameStore.currentPhase === 'prospecting' && !loggedInPlayer?.prospectReady);
-
   async function savePlayer(player: Player, action?: string) {
     if (!browser) return;
     try {
@@ -180,6 +178,7 @@
   );
 
   let predictedBalance = $derived(loggedInPlayer ? loggedInPlayer.money + netChange : 0);
+  let isOperatingLocked = $derived(gameStore.currentPhase === 'prospecting' && !loggedInPlayer?.prospectReady);
 
   // Persistence logic for turn actions
   function saveTurnActionsToLocal() {
