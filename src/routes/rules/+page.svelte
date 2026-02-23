@@ -26,6 +26,9 @@
   </ul>
 
   <h2>Helpful Game Highlights</h2>
+  <p>
+	If you've played before, it may be helpful to remember these more unique rules.
+  </p>
   <ul>
     <li>You survey a route, and you prospect a mine or a contract</li>
     <li>The first time operating a claim you only roll one dice and add 6</li>
