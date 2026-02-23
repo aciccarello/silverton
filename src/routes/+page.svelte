@@ -1,3 +1,4 @@
+
 <script lang="ts">
   import { gameStore } from '$lib/state/gameStore.svelte';
   import { confirmStore } from '$lib/state/confirmStore.svelte';
@@ -177,6 +178,7 @@
   );
 
   let predictedBalance = $derived(loggedInPlayer ? loggedInPlayer.money + netChange : 0);
+  let isOperatingLocked = $derived(gameStore.currentPhase === 'prospecting' && !loggedInPlayer?.prospectReady);
 
   // Persistence logic for turn actions
   function saveTurnActionsToLocal() {
@@ -250,7 +252,19 @@
     return [...candidates].sort((a, b) => b.money - a.money)[0];
   });
 
-  function completeTurn() {
+  function doneProspecting() {
+    if (loggedInPlayer) {
+      loggedInPlayer.prospectReady = true;
+      savePlayer($state.snapshot(loggedInPlayer), 'Done prospecting');
+      // Auto-advance if all players are ready and not already advanced
+      const allReady = gameStore.players.length > 0 && gameStore.players.every(p => p.prospectReady);
+      if (allReady && gameStore.currentPhase === 'prospecting') {
+        handleNextPhase();
+      }
+    }
+  }
+
+  function doneOperating() {
     if (loggedInPlayer) {
       // Record turn history entry
       const historyEntry: TurnHistoryEntry = {
@@ -261,15 +275,15 @@
         balance: predictedBalance,
         timestamp: new Date().toISOString()
       };
-      
+
       if (!loggedInPlayer.history) {
         loggedInPlayer.history = [];
       }
       loggedInPlayer.history.push(historyEntry);
 
       loggedInPlayer.money = predictedBalance;
-      loggedInPlayer.turnReady = true;
-      
+
+      loggedInPlayer.operateReady = true;
       // Reset inputs
       debitBuyTracks = null;
       debitBuyContracts = null;
@@ -284,6 +298,12 @@
 
       // Sync player balance and ready state
       savePlayer($state.snapshot(loggedInPlayer), 'Completed turn');
+
+      // Auto-advance if all players are ready and not already advanced
+      const allReady = gameStore.players.length > 0 && gameStore.players.every(p => p.operateReady);
+      if (allReady && gameStore.currentPhase === 'operating') {
+        handleNextPhase();
+      }
     }
   }
 
@@ -332,7 +352,8 @@
   function handleStartGame() {
     // Reset ready state and assign random turn order on all players
     gameStore.players.forEach(p => {
-      p.turnReady = false;
+      p.prospectReady = false;
+      p.operateReady = false;
     });
     assignTurnOrder();
     gameStore.startGame();
@@ -355,7 +376,8 @@
     // Reset ready state and re-shuffle turn order when a new turn begins
     if (wasReset) {
       gameStore.players.forEach(p => {
-        p.turnReady = false;
+        p.prospectReady = false;
+        p.operateReady = false;
       });
       assignTurnOrder();
     }
@@ -404,7 +426,7 @@
         {#if gameStore.players.length === 0}
           <p><em>No players registered yet.</em></p>
         {:else}
-          <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+          <div class="btn-container btn-container--vertical">
             {#each gameStore.players as player}
               <button 
                   class="btn btn-outline" 
@@ -486,69 +508,85 @@
 
         <!-- Turn Actions Widget -->
         <div class="card" style="grid-column: 1 / -1;">
-            <h3>Turn Actions</h3>
-            {#if isWinter}
-              <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9; display: flex; align-items: center; gap: 8px;">
-                ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries/passenger rail this turn.
-              </div>
-            {/if}
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
-                
-                <!-- Debits -->
-                <div>
-                    <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Debits (-)</h4>
-                    <label class="input-group">
-                        <span>Buy Tracks</span>
-                        <input type="number" min="0" bind:value={debitBuyTracks} placeholder="0" />
-                    </label>
-                    <label class="input-group">
-                        <span>Buy Contracts</span>
-                        <input type="number" min="0" bind:value={debitBuyContracts} placeholder="0" />
-                    </label>
-                    <label class="input-group">
-                        <span>Buy Claims</span>
-                        <input type="number" min="0" bind:value={debitBuyClaims} placeholder="0" />
-                    </label>
-                    <label class="input-group">
-                        <span>Operate Claims</span>
-                        <input type="number" min="0" bind:value={debitOperateClaims} placeholder="0" />
-                    </label>
-                    <label class="input-group">
-                        <span>Pay Fines</span>
-                        <input type="number" min="0" bind:value={debitPayFines} placeholder="0" />
-                    </label>
-                </div>
-
-                <!-- Credits & Adjustments -->
-                <div>
-                    <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Credits (+) & Adjustments</h4>
-                    <label class="input-group">
-                        <span>Passenger Revenue</span>
-                        <input type="number" min="0" bind:value={creditPassengerRevenue} placeholder="0" />
-                    </label>
-                    <label class="input-group">
-                        <span>Sell Resources</span>
-                        <input type="number" min="0" bind:value={creditSellResources} placeholder="0" />
-                    </label>
-                    <label class="input-group">
-                        <span>Deals & Adjustments (+/-)</span>
-                        <input type="number" bind:value={dealsAndAdjustments} placeholder="0" />
-                    </label>
-                </div>
+          <h3>Turn Actions</h3>
+          {#if isWinter}
+            <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9;">
+            ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries/passenger rail this turn.
             </div>
+          {/if}
 
-            <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
-                <div>
-                    <span style="font-size: 0.9rem; color: var(--color-text-secondary); margin-right: var(--spacing-md); display: inline-block;">
-                        Net Change: <strong style="color: {netChange > 0 ? 'var(--color-primary)' : netChange < 0 ? '#ff4d4f' : 'inherit'}">{netChange > 0 ? '+' : ''}{netChange}</strong>
-                    </span>
-                    <span style="font-size: 1.1rem; display: inline-block;">
-                        New Balance: <strong style="color: {predictedBalance < 0 ? '#ff4d4f' : 'inherit'}">${predictedBalance}</strong>
-                    </span>
-                </div>
-                <button class="btn btn-primary" onclick={completeTurn} disabled={predictedBalance < 0}>{loggedInPlayer.turnReady ? 'Make Adjustment' : 'My Turn Complete'}</button>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+
+            <!-- Debits -->
+            <div>
+              <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Debits (-)</h4>
+              <label class="input-group">
+                <span>Buy Tracks</span>
+                <input type="number" min="0" bind:value={debitBuyTracks} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+              <label class="input-group">
+                <span>Buy Contracts</span>
+                <input type="number" min="0" bind:value={debitBuyContracts} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+              <label class="input-group">
+                <span>Buy Claims</span>
+                <input type="number" min="0" bind:value={debitBuyClaims} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+              <label class="input-group">
+                <span>Operate Claims</span>
+                <input type="number" min="0" bind:value={debitOperateClaims} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+              <label class="input-group">
+                <span>Pay Fines</span>
+                <input type="number" min="0" bind:value={debitPayFines} placeholder="0" disabled={isOperatingLocked} />
+              </label>
             </div>
+            <!-- Credits & Adjustments -->
+            <div>
+              <h4 style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Credits (+) & Adjustments</h4>
+              <label class="input-group">
+                <span>Passenger Revenue</span>
+                <input type="number" min="0" bind:value={creditPassengerRevenue} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+              <label class="input-group">
+                <span>Sell Resources</span>
+                <input type="number" min="0" bind:value={creditSellResources} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+              <label class="input-group">
+                <span>Deals & Adjustments (+/-)</span>
+                <input type="number" bind:value={dealsAndAdjustments} placeholder="0" disabled={isOperatingLocked} />
+              </label>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+			<div>
+				<span style="font-size: 1.1rem; font-weight: bold; color: var(--color-primary);">
+				Current Phase:
+				</span>
+				<span style="margin-left: 0.5rem; color: var(--color-text-secondary);">
+				{#if gameStore.currentPhase === 'prospecting'}
+					Prospect & Survey, Resolve Disputes
+				{:else if gameStore.currentPhase === 'operating'}
+					Buy, Operate, Build, Deliver, Sell
+				{:else if gameStore.currentPhase === 'reset'}
+					Replenish Cards, Price Changes, Advance Turn
+				{/if}
+				</span>
+			</div>
+            <div>
+              <span style="font-size: 0.9rem; color: var(--color-text-secondary); margin-right: var(--spacing-md); display: inline-block;">
+                Net Change: <strong style="color: {netChange > 0 ? 'var(--color-primary)' : netChange < 0 ? '#ff4d4f' : 'inherit'}">{netChange > 0 ? '+' : ''}{netChange}</strong>
+              </span>
+              <span style="font-size: 1.1rem; display: inline-block;">
+                New Balance: <strong style="color: {predictedBalance < 0 ? '#ff4d4f' : 'inherit'}">${predictedBalance}</strong>
+              </span>
+            </div>
+            <div class="btn-container">
+			  <button class="btn btn-primary" onclick={doneProspecting} disabled={loggedInPlayer?.prospectReady || gameStore.currentPhase !== 'prospecting'}>I'm Done Prospecting</button>
+              <button class="btn btn-primary" onclick={doneOperating} disabled={predictedBalance < 0 || gameStore.currentPhase === 'prospecting'}>{loggedInPlayer?.operateReady ? "Make Adjustment" : "I'm Done Operating"}</button>
+            </div>
+          </div>
         </div>
     {/if}
     
@@ -601,7 +639,7 @@
           {/if}
         </div>
 
-        <div style="display: flex; gap: var(--spacing-sm); width: 100%; margin-top: auto; flex-wrap: wrap;">
+        <div class="btn-container">
           <button 
             class="btn btn-sm btn-outline" 
             style="flex: 1 1 120px;" 
@@ -630,13 +668,13 @@
             <ul style="list-style-type: none; padding: 0;">
                 {#each sortedPlayers as player}
                     <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display: flex; align-items: center; gap: 8px;">
+                      <span style="display: flex; align-items: center; gap: 8px;">
                             <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
                             {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
                             <strong>{player.name}</strong> 
                             {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
-                            {#if player.turnReady && !winner}
-                                <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
+                            {#if ((player.prospectReady && gameStore.currentPhase === 'prospecting') || (player.operateReady && gameStore.currentPhase === 'operating')) && !winner}
+                              <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
                             {/if}
                         </span>
                         <span class:winning-money={player.id === winner?.id}>

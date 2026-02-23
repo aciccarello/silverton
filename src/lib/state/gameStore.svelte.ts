@@ -17,7 +17,8 @@ export interface Player {
     money: number;
     claims: number;
     score: number;
-    turnReady?: boolean;
+    prospectReady?: boolean;
+    operateReady?: boolean;
     turnOrder?: number;
     history?: TurnHistoryEntry[];
 }
@@ -81,6 +82,11 @@ export class GameState {
             // End of reset phase (or unknown) → new turn
             this.turnNumber++;
             this.currentPhase = 'prospecting';
+            // Clear operateReady and prospectReady at start of new turn
+            this.players.forEach(p => {
+                p.prospectReady = false;
+                p.operateReady = false;
+            });
         }
     }
 

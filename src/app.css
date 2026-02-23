@@ -180,11 +180,27 @@ a:hover {
   box-shadow: 0 0 10px var(--color-glow) inset;
 }
 
-.btn:disabled {
+.btn:disabled, input:disabled, select:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
 }
+
+.btn-container {
+	display: flex;
+	gap: var(--spacing-sm);
+	width: 100%;
+	margin-top: var(--spacing-sm);
+	flex-wrap: wrap;
+
+	.btn {
+		flex: 1 1 0;
+	}
+}
+.btn-container--vertical {
+	flex-direction: column;
+}
+
 
 /* Micro Animations */
 @keyframes fadeInSlideUp {
