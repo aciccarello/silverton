@@ -416,7 +416,7 @@
         {#if gameStore.players.length === 0}
           <p><em>No players registered yet.</em></p>
         {:else}
-          <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+          <div class="btn-container btn-contaner--vertical">
             {#each gameStore.players as player}
               <button 
                   class="btn btn-outline" 
@@ -558,10 +558,10 @@
                 New Balance: <strong style="color: {predictedBalance < 0 ? '#ff4d4f' : 'inherit'}">${predictedBalance}</strong>
               </span>
             </div>
-          {#if gameStore.currentPhase === 'prospecting'}
-            <button class="btn btn-primary" style="width: 100%;" onclick={doneProspecting} disabled={loggedInPlayer?.prospectReady}>I'm Done Prospecting/Surveying</button>
-          {/if}
-                <button class="btn btn-primary" onclick={doneOperating} disabled={predictedBalance < 0 || isOperatingLocked}>{loggedInPlayer.operateReady ? 'Make Adjustment' : 'I'm Done Operating'}</button>
+            <div class="btn-container">
+			  <button class="btn btn-primary" onclick={doneProspecting} disabled={loggedInPlayer?.prospectReady || gameStore.currentPhase !== 'prospecting'}>I'm Done Prospecting</button>
+              <button class="btn btn-primary" onclick={doneOperating} disabled={predictedBalance < 0 || isOperatingLocked}>{loggedInPlayer?.operateReady ? "Make Adjustment" : "I'm Done Operating"}</button>
+            </div>
           </div>
         </div>
     {/if}
@@ -615,7 +615,7 @@
           {/if}
         </div>
 
-        <div style="display: flex; gap: var(--spacing-sm); width: 100%; margin-top: auto; flex-wrap: wrap;">
+        <div class="btn-container">
           <button 
             class="btn btn-sm btn-outline" 
             style="flex: 1 1 120px;" 
@@ -649,8 +649,8 @@
                             {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
                             <strong>{player.name}</strong> 
                             {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
-                            {#if ((player.prospectReady && gameStore.currentPhase === 'prospecting') || (if player.operateReady && gameStore.currentPhase === 'operating')) && !winner}
-                                <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
+                            {#if ((player.prospectReady && gameStore.currentPhase === 'prospecting') || (player.operateReady && gameStore.currentPhase === 'operating')) && !winner}
+                              <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
                             {/if}
                         </span>
                         <span class:winning-money={player.id === winner?.id}>
