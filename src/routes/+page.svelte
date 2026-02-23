@@ -257,6 +257,11 @@
     if (loggedInPlayer) {
       loggedInPlayer.prospectReady = true;
       savePlayer($state.snapshot(loggedInPlayer), 'Done prospecting');
+      // Auto-advance if all players are ready and not already advanced
+      const allReady = gameStore.players.length > 0 && gameStore.players.every(p => p.prospectReady);
+      if (allReady && gameStore.currentPhase === 'prospecting') {
+        handleNextPhase();
+      }
     }
   }
 
@@ -294,6 +299,12 @@
 
       // Sync player balance and ready state
       savePlayer($state.snapshot(loggedInPlayer), 'Completed turn');
+
+      // Auto-advance if all players are ready and not already advanced
+      const allReady = gameStore.players.length > 0 && gameStore.players.every(p => p.operateReady);
+      if (allReady && gameStore.currentPhase === 'operating') {
+        handleNextPhase();
+      }
     }
   }
 
@@ -416,7 +427,7 @@
         {#if gameStore.players.length === 0}
           <p><em>No players registered yet.</em></p>
         {:else}
-          <div class="btn-container btn-contaner--vertical">
+          <div class="btn-container btn-container--vertical">
             {#each gameStore.players as player}
               <button 
                   class="btn btn-outline" 
