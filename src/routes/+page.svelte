@@ -37,15 +37,6 @@
     }
   });
 
-  // Restore session synchronously on client
-  if (browser) {
-    const storedId = localStorage.getItem('silverton_active_user_id');
-    if (storedId && gameStore.players.some(p => p.id === storedId)) {
-      loggedInUserId = storedId;
-      loadTurnActionsFromLocal();
-    }
-  }
-
   async function savePlayer(player: Player, action?: string) {
     if (!browser) return;
     try {
@@ -386,6 +377,15 @@
         turnNumber: gameStore.turnNumber,
         activePlayerId: gameStore.activePlayerId
     }, `Advanced to ${gameStore.currentPhase} phase`);
+  }
+
+  // Restore session synchronously on client
+  if (browser) {
+    const storedId = localStorage.getItem('silverton_active_user_id');
+    if (storedId && gameStore.players.some(p => p.id === storedId)) {
+      loggedInUserId = storedId;
+      loadTurnActionsFromLocal();
+    }
   }
 </script>
 
