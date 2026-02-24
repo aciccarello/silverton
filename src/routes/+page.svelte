@@ -1,4 +1,3 @@
-
 <script lang="ts">
   import { gameStore } from '$lib/state/gameStore.svelte';
   import { confirmStore } from '$lib/state/confirmStore.svelte';
@@ -71,7 +70,17 @@
     }
   }
 
+  // Getting started tips toggle (not persisted)
+  let showGettingStartedTips = $state(gameStore.currentPhase === 'setup');
+  let previousPhase = gameStore.currentPhase;
 
+  // When phase changes from setup to another, auto-hide tips if still showing
+  $effect(() => {
+    if (previousPhase === 'setup' && gameStore.currentPhase !== 'setup' && showGettingStartedTips) {
+      showGettingStartedTips = false;
+    }
+    previousPhase = gameStore.currentPhase;
+  });
 
   onMount(() => {
     mounted = true;
@@ -403,6 +412,12 @@
       <button class="btn btn-outline" style="border-color: {loggedInPlayer.color}; color: {loggedInPlayer.color}; pointer-events: none;">Welcome, {loggedInPlayer.name}</button>
       <button class="btn btn-outline" onclick={logOut}>Log Out</button>
     </div>
+    <div style="margin: 1rem 0; text-align: center;">
+      <label style="cursor: pointer; font-size: 1rem;">
+        <input type="checkbox" bind:checked={showGettingStartedTips} style="margin-right: 0.5em; vertical-align: middle;" />
+        Show Getting Started Tips
+      </label>
+    </div>
   {/if}
 </div>
 
@@ -504,11 +519,17 @@
                   </div>
                 </div>
             </div>
+          {#if showGettingStartedTips}
+            <div class="card-tip">To start, select the color corresponding to your game pieces. One the game begins, you will want to find the prospector and surveyor pieces that correspond to your starting position.</div>
+          {/if}
         </div>
 
         <!-- Turn Actions Widget -->
         <div class="card" style="grid-column: 1 / -1;">
           <h3>Turn Actions</h3>
+          {#if showGettingStartedTips}
+            <div class="card-tip">Here you can add up all the debts and credits for the turn. To begin, you must be done prospecting. Debts are subtracted while credits and adjustments are added to your balance. Click "I'm done operating" to save your changes. If you've saved prematurely, you can also make an adjustment. If needed you can enter negative adjustments.</div>
+          {/if}
           {#if isWinter}
             <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9;">
             ❄️ <strong>Winter:</strong> White (winter) route segments cannot be surveyed or used for deliveries/passenger rail this turn.
@@ -592,6 +613,9 @@
     
     <div class="card">
       <h3>Turn Sequence</h3>
+      {#if showGettingStartedTips}
+        <div class="card-tip">This card, modeled after the physical card from the game, outlines the sequence of phases and steps for each game turn and highlights the current phase.</div>
+      {/if}
       <ol class="turn-sequence">
         <li>Deal Turn Order Cards</li>
         <li class:active-step={gameStore.currentPhase === 'prospecting'}>Prospect &amp; Survey</li>
@@ -616,6 +640,9 @@
     <!-- Roll to Operate Claim Widget -->
     <div class="card roll-card animate-entrance">
       <h3>Roll to Operate Claim</h3>
+      {#if showGettingStartedTips}
+        <div class="card-tip">Here you can roll dice to operate a claim and determine how many resources you yield. Roll one die the first time you operate a claim, and 2 dice for subsequent turns.</div>
+      {/if}
       <div style="display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) 0; flex: 1;">
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-md); width: 100%;">
           <Dice results={claimRollResults} isRolling={isClaimRolling} diceCount={claimRollType === 'Initial' ? 1 : 2}>
@@ -661,38 +688,44 @@
     </div>
     
     <div class="card">
-        <h3>All Players ({gameStore.players.length})</h3>
-        {#if gameStore.players.length === 0}
-            <p>No players added yet.</p>
-        {:else}
-            <ul style="list-style-type: none; padding: 0;">
-                {#each sortedPlayers as player}
-                    <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-                      <span style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
-                            {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
-                            <strong>{player.name}</strong> 
-                            {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
-                            {#if ((player.prospectReady && gameStore.currentPhase === 'prospecting') || (player.operateReady && gameStore.currentPhase === 'operating')) && !winner}
-                              <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
-                            {/if}
-                        </span>
-                        <span class:winning-money={player.id === winner?.id}>
-                            {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId || winner}
-                                ${player.money}
-                            {:else}
-                                <span style="color: var(--color-text-secondary); font-style: italic;">Hidden</span>
-                            {/if}
-                        </span>
-                    </li>
-                {/each}
-            </ul>
-        {/if}
+      <h3>Player Order ({gameStore.players.length})</h3>
+      {#if showGettingStartedTips}
+        <div class="card-tip">This is where you can see all players in the game, the order for this game turn, and whether others are ready to move to the next phase. As players reach the visibility threshold, their balance will become visible.</div>
+      {/if}
+      {#if gameStore.players.length === 0}
+        <p>No players added yet.</p>
+      {:else}
+        <ul style="list-style-type: none; padding: 0; flex-grow: 1;">
+          {#each sortedPlayers as player}
+            <li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
+                {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
+                <strong>{player.name}</strong> 
+                {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
+                {#if ((player.prospectReady && gameStore.currentPhase === 'prospecting') || (player.operateReady && gameStore.currentPhase === 'operating')) && !winner}
+                  <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
+                {/if}
+              </span>
+              <span class:winning-money={player.id === winner?.id}>
+                {#if player.money >= gameStore.config.visibleAmount || player.id === loggedInUserId || winner}
+                  ${player.money}
+                {:else}
+                  <span style="color: var(--color-text-secondary); font-style: italic;">Hidden</span>
+                {/if}
+              </span>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
 
     <!-- Global Game Stats Widget -->
     <div class="card">
       <h3>Game Status</h3>
+      {#if showGettingStartedTips}
+        <div class="card-tip">This section lists some broader game details like the turn and is also where a player can move everyone forward to the next phase when all are ready.</div>
+      {/if}
     {#if winner}
       <p class="game-status-line"><strong>Winner:</strong> {winner.name} 🎉</p>
     {/if}
@@ -723,6 +756,9 @@
 
     <div class="card" style="grid-column: 1 / -1;">
       <h3>Your Turn History</h3>
+      {#if showGettingStartedTips}
+        <div class="card-tip">Here you can review your personal turn history, including net changes and balances for each round. This can be helpful if you want to compare how you are doing with previous turns.</div>
+      {/if}
       {#if !loggedInPlayer?.history || loggedInPlayer.history.length === 0}
         <p>No turns completed yet.</p>
       {:else}
@@ -868,8 +904,6 @@
 
   .roll-card {
     min-height: 450px;
-    display: flex;
-    flex-direction: column;
   }
 
   /* Color Picker Dropdown Styles */
@@ -966,4 +1000,5 @@
     color: var(--color-primary);
     font-weight: bold;
   }
+
 </style>
