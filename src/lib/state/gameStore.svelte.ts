@@ -65,6 +65,20 @@ export class GameState {
 
     startGame() {
         if (this.players.length > 0) {
+            const playerCount = this.players.length;
+            let startingMoney = 1600;
+
+            if (playerCount <= 2) startingMoney = 2400;
+            else if (playerCount === 3) startingMoney = 2200;
+            else if (playerCount === 4) startingMoney = 2000;
+            else if (playerCount === 5) startingMoney = 1600;
+            else if (playerCount >= 6) startingMoney = 1400;
+
+            this.config.startingMoney = startingMoney;
+            this.players.forEach(p => {
+                p.money = startingMoney;
+            });
+
             this.currentPhase = 'prospecting';
             this.turnNumber = 1;
             this.activePlayerId = this.players[0].id;
