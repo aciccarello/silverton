@@ -3,7 +3,7 @@
     results: number[];
     isRolling: boolean;
     diceCount?: number;
-    children?: import('svelte').Snippet;
+    children?: import("svelte").Snippet;
   }
 
   let { results, isRolling, diceCount = 2, children }: Props = $props();
@@ -11,14 +11,14 @@
   // Helper for dots on a die
   function getDots(value: number) {
     const positions = [
-      [],               // 0 (unused)
-      [4],              // 1 (center)
-      [0, 8],           // 2 (top-left, bottom-right)
-      [0, 4, 8],        // 3 (top-left, center, bottom-right)
-      [0, 2, 6, 8],     // 4 (four corners)
-      [0, 2, 4, 6, 8],  // 5 (four corners + center)
-      [0, 2, 4, 6, 8],  // 5 (four corners + center)
-      [0, 2, 3, 5, 6, 8] // 6 (two vertical columns)
+      [], // 0 (unused)
+      [4], // 1 (center)
+      [0, 8], // 2 (top-left, bottom-right)
+      [0, 4, 8], // 3 (top-left, center, bottom-right)
+      [0, 2, 6, 8], // 4 (four corners)
+      [0, 2, 4, 6, 8], // 5 (four corners + center)
+      [0, 2, 4, 6, 8], // 5 (four corners + center)
+      [0, 2, 3, 5, 6, 8], // 6 (two vertical columns)
     ];
     return positions[value] || [];
   }
@@ -33,22 +33,24 @@
     {#each results as val}
       <div class="mini-die animate-bounce-in">
         {#each Array(9) as _, dotIdx}
-          <div class="mini-dot" class:visible={getDots(val).includes(dotIdx)}></div>
+          <div
+            class="mini-dot"
+            class:visible={getDots(val).includes(dotIdx)}
+          ></div>
         {/each}
       </div>
     {/each}
+  {:else if children}
+    {@render children()}
   {:else}
-    {#if children}
-      {@render children()}
-    {:else}
-      <span class="placeholder">Ready</span>
-    {/if}
+    <span class="placeholder">Ready</span>
   {/if}
 </div>
 
 <style>
   .dice-container {
     display: flex;
+    flex-direction: column;
     gap: 8px;
     min-height: 32px;
     align-items: center;

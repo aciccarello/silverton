@@ -394,19 +394,16 @@
           </colgroup>
           <thead>
             <tr>
-              <th class="price-col"></th>
-              <th class="group-header">Gold</th>
-              <th></th>
-              <th class="group-header">Copper</th>
-              <th></th>
-              <th class="group-header">Silver</th>
+              <th class="group-header" colspan="2">Gold</th>
+              <th class="group-header" colspan="2">Copper</th>
+              <th class="group-header" colspan="2">Silver</th>
             </tr>
             <tr class="sub-header">
-              <th class="price-col">Price Index</th>
+              <th class="price-col">Price</th>
               <th></th>
-              <th class="price-col">Price Index</th>
+              <th class="price-col">Price</th>
               <th></th>
-              <th class="price-col">Price Index</th>
+              <th class="price-col">Price</th>
               <th></th>
             </tr>
           </thead>
