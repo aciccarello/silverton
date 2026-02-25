@@ -23,6 +23,7 @@ export interface Player {
     prospectReady?: boolean;
     operateReady?: boolean;
     turnOrder?: number;
+    startingOrder?: number;
     history?: TurnHistoryEntry[];
 }
 
@@ -65,6 +66,28 @@ export class GameState {
 
     startGame() {
         if (this.players.length > 0) {
+            const playerCount = this.players.length;
+            let startingMoney = 1600;
+
+            if (playerCount <= 2) startingMoney = 2400;
+            else if (playerCount === 3) startingMoney = 2200;
+            else if (playerCount === 4) startingMoney = 2000;
+            else if (playerCount === 5) startingMoney = 1600;
+            else if (playerCount >= 6) startingMoney = 1400;
+
+            this.config.startingMoney = startingMoney;
+            this.players.forEach(p => {
+                p.money = startingMoney;
+
+                // Assign starting market based on starting order
+                const order = p.startingOrder || 0;
+                if (order === 1 || order === 2) p.marketsInPlay = ['Denver'];
+                else if (order === 3) p.marketsInPlay = ['El Paso'];
+                else if (order === 4) p.marketsInPlay = ['Salt Lake City'];
+                else if (order === 5) p.marketsInPlay = ['Pueblo'];
+                else if (order === 6) p.marketsInPlay = ['Santa Fe'];
+            });
+
             this.currentPhase = 'prospecting';
             this.turnNumber = 1;
             this.activePlayerId = this.players[0].id;
