@@ -199,6 +199,34 @@
     "Santa Fe",
   ] as const;
 
+  const STARTING_PIECES: Record<number, Record<number, string>> = {
+    1: {
+      2: "S+2, S, P+1, P",
+      3: "S+2, S, P, P",
+      4: "S+2, S, P, P",
+      5: "S+2, P",
+      6: "S+2, P",
+    },
+    2: {
+      2: "S+1, S, P+2, P",
+      3: "S+1, S, P+1, P",
+      4: "S+1, S, P+1, P",
+      5: "S, P+2",
+      6: "S, P+2",
+    },
+    3: { 3: "S, S, P+2, P", 4: "S+1, S, P+1, P", 5: "S+1, P+1", 6: "S+1, P+1" },
+    4: { 4: "S, S, P+2, P", 5: "S, P+2", 6: "S, P+2" },
+    5: { 5: "S+1, P+1", 6: "S+1, P+1" },
+    6: { 6: "S+2, P" },
+  };
+
+  function getStartingPieces(player: Player | undefined) {
+    if (!player?.startingOrder) return null;
+    return (
+      STARTING_PIECES[player.startingOrder]?.[gameStore.players.length] || null
+    );
+  }
+
   function toggleMarket(market: (typeof MARKETS)[number]) {
     if (!loggedInPlayer) return;
     const current = loggedInPlayer.marketsInPlay ?? [];
@@ -427,6 +455,9 @@
     // Assign order (1-indexed) based on shuffled list
     gameStore.players.forEach((p) => {
       p.turnOrder = playerIds.indexOf(p.id) + 1;
+      if (gameStore.currentPhase === "setup") {
+        p.startingOrder = p.turnOrder;
+      }
       savePlayer($state.snapshot(p), "Assigned turn order");
     });
   }
@@ -695,6 +726,14 @@
                   <span>{market}</span>
                 </label>
               {/each}
+            </div>
+            <div style="margin-top: 0.5rem;">
+              <strong>Starting Pieces ({loggedInPlayer.startingOrder}):</strong>
+              <span
+                style="color: var(--color-primary); font-weight: bold; margin-left: 0.5rem;"
+              >
+                {getStartingPieces(loggedInPlayer) || "N/A"}
+              </span>
             </div>
           </div>
           {#if showGettingStartedTips}
