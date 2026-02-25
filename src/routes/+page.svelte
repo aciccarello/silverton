@@ -106,7 +106,7 @@
 
   // Getting started tips toggle (not persisted)
   let showGettingStartedTips = $state(gameStore.currentPhase === 'setup');
-  let previousPhase = gameStore.currentPhase;
+  let previousPhase = $state(gameStore.currentPhase);
 
   // When phase changes from setup to another, auto-hide tips if still showing
   $effect(() => {
