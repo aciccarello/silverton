@@ -104,15 +104,15 @@
   });
 
   let newPlayerName = $state('');
-  
+
   function handleAddPlayer() {
     if (newPlayerName.trim()) {
       // Pick random color from a preset list
       const colors = PLAYER_COLORS.map(c => c.hex);
       const color = colors[gameStore.players.length % colors.length];
-      
+
       const newPlayerId = Math.random().toString(36).substring(2, 9);
-      
+
       const newPlayer = {
           id: newPlayerId,
           name: newPlayerName.trim(),
@@ -122,7 +122,7 @@
           claims: 0,
           score: 0
       };
-      
+
       // Mutating the gameStore directly
       gameStore.players.push(newPlayer);
       newPlayerName = '';
@@ -167,13 +167,13 @@
   let dealsAndAdjustments = $state<number | null>(null);
 
   let netChange = $derived(
-    (creditPassengerRevenue || 0) + 
-    (creditSellResources || 0) + 
-    (dealsAndAdjustments || 0) - 
+    (creditPassengerRevenue || 0) +
+    (creditSellResources || 0) +
+    (dealsAndAdjustments || 0) -
     (debitBuyTracks || 0) -
     (debitBuyContracts || 0) -
-    (debitBuyClaims || 0) - 
-    (debitOperateClaims || 0) - 
+    (debitBuyClaims || 0) -
+    (debitOperateClaims || 0) -
     (debitPayFines || 0)
   );
 
@@ -316,7 +316,7 @@
 
   async function rollClaim(type: 'Initial' | 'Normal') {
     if (isClaimRolling) return;
-    
+
     isClaimRolling = true;
     claimRollType = type;
     claimRollResults = [];
@@ -327,7 +327,7 @@
 
     const diceCount = type === 'Initial' ? 1 : 2;
     const results = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
-    
+
     claimRollResults = results;
     const sum = results.reduce((a, b) => a + b, 0);
     claimRollTotal = type === 'Initial' ? sum + 6 : sum;
@@ -341,7 +341,7 @@
       const j = Math.floor(Math.random() * (i + 1));
       [playerIds[i], playerIds[j]] = [playerIds[j], playerIds[i]];
     }
-    
+
     // Assign order (1-indexed) based on shuffled list
     gameStore.players.forEach(p => {
       p.turnOrder = playerIds.indexOf(p.id) + 1;
@@ -366,7 +366,7 @@
 
   async function handleNextPhase() {
     const wasReset = gameStore.currentPhase === 'reset';
-    
+
     if (wasReset) {
       const confirmed = await confirmStore.confirm('Are you sure you want to advance to the next turn? This will shuffle turn order and reset all player ready states.');
       if (!confirmed) return;
@@ -406,7 +406,7 @@
 <div class="hero animate-entrance">
   <h1>Silverton</h1>
   <p class="subtitle stagger-1">Board Game Tracker</p>
-  
+
   {#if loggedInPlayer}
     <div class="actions animate-entrance stagger-2">
       <button class="btn btn-outline" style="border-color: {loggedInPlayer.color}; color: {loggedInPlayer.color}; pointer-events: none;">Welcome, {loggedInPlayer.name}</button>
@@ -435,7 +435,7 @@
     <div class="dashboard-grid animate-entrance stagger-3" style="max-width: 600px; margin: 0 auto;">
     <div class="card" style="text-align: center;">
       <h2>Join Game</h2>
-      
+
       <div style="margin: var(--spacing-lg) 0;">
         <p style="margin-bottom: var(--spacing-sm); color: var(--color-text-secondary);">Select an existing player to log in:</p>
         {#if gameStore.players.length === 0}
@@ -443,8 +443,8 @@
         {:else}
           <div class="btn-container btn-container--vertical">
             {#each gameStore.players as player}
-              <button 
-                  class="btn btn-outline" 
+              <button
+                  class="btn btn-outline"
                   style="border-color: {player.color}; color: {player.color}; width: 100%;"
                   onclick={() => logInAs(player.id)}
               >
@@ -454,15 +454,15 @@
           </div>
         {/if}
       </div>
-      
+
       <div style="border-top: 1px solid var(--color-border); padding-top: var(--spacing-lg);">
         <p style="margin-bottom: var(--spacing-sm); color: var(--color-text-secondary);">Or register a new player:</p>
         {#if gameStore.currentPhase === 'setup'}
           <form style="display: flex; gap: 0.5rem; justify-content: center;" onsubmit={(e) => { e.preventDefault(); handleAddPlayer(); }}>
-            <input 
-              type="text" 
-              bind:value={newPlayerName} 
-              placeholder="Your Name" 
+            <input
+              type="text"
+              bind:value={newPlayerName}
+              placeholder="Your Name"
               style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--color-border); background: var(--color-bg-elevated); color: var(--color-text-primary);"
             />
             <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;">Join</button>
@@ -476,7 +476,7 @@
 {:else}
   <!-- PLAYER DASHBOARD VIEW -->
   <div class="dashboard-grid animate-entrance stagger-3">
-    
+
     <!-- Player Stats Widget -->
     {#if loggedInPlayer}
         <div class="card" style="border-top: 4px solid {loggedInPlayer.color}; grid-column: 1 / -1;">
@@ -484,11 +484,11 @@
                 <h2>Your balance</h2>
                 <div style="display: flex; align-items: baseline; gap: var(--spacing-md); flex-wrap: wrap;">
                   <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
-                  
+
                   <!-- Color Picker Dropdown -->
                   <div class="color-picker-container">
-                    <button 
-                      class="color-picker-trigger" 
+                    <button
+                      class="color-picker-trigger"
                       onclick={() => isColorDropdownOpen = !isColorDropdownOpen}
                       style="border-color: {loggedInPlayer.color};"
                     >
@@ -500,11 +500,11 @@
                     {#if isColorDropdownOpen}
                       <div class="color-dropdown-menu card animate-entrance">
                         {#each PLAYER_COLORS as color}
-                          <button 
-                            class="color-dropdown-item" 
-                            onclick={() => { 
-                              updatePlayerColor(color.hex); 
-                              isColorDropdownOpen = false; 
+                          <button
+                            class="color-dropdown-item"
+                            onclick={() => {
+                              updatePlayerColor(color.hex);
+                              isColorDropdownOpen = false;
                             }}
                           >
                             <div class="color-swatch-sm" style="background-color: {color.hex};"></div>
@@ -520,7 +520,7 @@
                 </div>
             </div>
           {#if showGettingStartedTips}
-            <div class="card-tip">To start, select the color corresponding to your game pieces. One the game begins, you will want to find the prospector and surveyor pieces that correspond to your starting position.</div>
+            <div class="card-tip">To start, <strong>select the color corresponding to your game pieces</strong>. One the game begins, you will want to find the prospector and surveyor pieces that correspond to your starting position.</div>
           {/if}
         </div>
 
@@ -528,7 +528,7 @@
         <div class="card" style="grid-column: 1 / -1;">
           <h3>Turn Actions</h3>
           {#if showGettingStartedTips}
-            <div class="card-tip">Here you can add up all the debts and credits for the turn. To begin, you must be done prospecting. Debts are subtracted while credits and adjustments are added to your balance. Click "I'm done operating" to save your changes. If you've saved prematurely, you can also make an adjustment. If needed you can enter negative adjustments.</div>
+            <div class="card-tip">Here you can <strong>add up all the debts and credits for the turn</strong>. To begin, you must be done prospecting. Debts are subtracted while credits and adjustments are added to your balance. Click "I'm done operating" to save your changes. If you've saved prematurely, you can also make an adjustment. If needed you can enter negative adjustments.</div>
           {/if}
           {#if isWinter}
             <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9;">
@@ -610,11 +610,11 @@
           </div>
         </div>
     {/if}
-    
+
     <div class="card">
       <h3>Turn Sequence</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">This card, modeled after the physical card from the game, outlines the sequence of phases and steps for each game turn and highlights the current phase.</div>
+        <div class="card-tip">This card, modeled after the physical card from the game, <strong>outlines the sequence of phases and steps for each game turn</strong> and highlights the current phase. <br><a href="/rules#game-turn-sequence">Learn more</a></div>
       {/if}
       <ol class="turn-sequence">
         <li>Deal Turn Order Cards</li>
@@ -641,7 +641,7 @@
     <div class="card roll-card animate-entrance">
       <h3>Roll to Operate Claim</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">Here you can roll dice to operate a claim and determine how many resources you yield. Roll one die the first time you operate a claim, and 2 dice for subsequent turns.</div>
+        <div class="card-tip">Here you can <strong>roll dice to operate a claim</strong> and determine how many resources you yield. Roll one die the first time you operate a claim, and 2 dice for subsequent turns.</div>
       {/if}
       <div style="display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) 0; flex: 1;">
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-md); width: 100%;">
@@ -667,17 +667,17 @@
         </div>
 
         <div class="btn-container">
-          <button 
-            class="btn btn-sm btn-outline" 
-            style="flex: 1 1 120px;" 
+          <button
+            class="btn btn-sm btn-outline"
+            style="flex: 1 1 120px;"
             onclick={() => rollClaim('Initial')}
             disabled={isClaimRolling}
           >
             Initial (1d+6)
           </button>
-          <button 
-            class="btn btn-sm btn-outline" 
-            style="flex: 1 1 120px;" 
+          <button
+            class="btn btn-sm btn-outline"
+            style="flex: 1 1 120px;"
             onclick={() => rollClaim('Normal')}
             disabled={isClaimRolling}
           >
@@ -686,11 +686,11 @@
         </div>
       </div>
     </div>
-    
+
     <div class="card">
       <h3>Player Order ({gameStore.players.length})</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">This is where you can see all players in the game, the order for this game turn, and whether others are ready to move to the next phase. As players reach the visibility threshold, their balance will become visible.</div>
+        <div class="card-tip">This is where you can <strong>see all players in the game</strong>, the order for this game turn, and whether others are ready to move to the next phase. As players reach the visibility threshold, their balance will become visible.</div>
       {/if}
       {#if gameStore.players.length === 0}
         <p>No players added yet.</p>
@@ -701,7 +701,7 @@
               <span style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {player.color}"></div>
                 {#if player.turnOrder}<span style="font-size: 0.8rem; color: var(--color-text-secondary); width: 15px;">{player.turnOrder}.</span>{/if}
-                <strong>{player.name}</strong> 
+                <strong>{player.name}</strong>
                 {#if player.id === loggedInUserId} <span style="font-size: 0.8rem; color: var(--color-text-secondary);">(You)</span> {/if}
                 {#if ((player.prospectReady && gameStore.currentPhase === 'prospecting') || (player.operateReady && gameStore.currentPhase === 'operating')) && !winner}
                   <span style="font-size: 0.75rem; background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a; border-radius: 10px; padding: 1px 7px; font-weight: bold;">✓ Ready</span>
@@ -724,17 +724,17 @@
     <div class="card">
       <h3>Game Status</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">This section lists some broader game details like the turn and is also where a player can move everyone forward to the next phase when all are ready.</div>
+        <div class="card-tip">This section lists some <strong>broader game details</strong> like the turn and is also where a player can move everyone forward to the next phase when all are ready.</div>
       {/if}
     {#if winner}
       <p class="game-status-line"><strong>Winner:</strong> {winner.name} 🎉</p>
     {/if}
       <p class="game-status-line"><strong>Game Turn:</strong> {gameStore.turnNumber} <span style="color: {isWinter ? '#64b5f6' : 'var(--color-text-secondary)'}; font-style: italic;">{season}</span></p>
       <p class="game-status-line"><strong>Turn Phase:</strong> {gameStore.currentPhase}</p>
-      
+
       {#if loggedInPlayer?.turnOrder}
         <div style="margin-top: var(--spacing-sm);">
-          <strong>Turn Order:</strong> 
+          <strong>Turn Order:</strong>
           {loggedInPlayer.turnOrder}
             <span style="font-size: 0.9rem; color: var(--color-text-secondary);">
               ({sortedPlayers.filter((p, index) => index + 1 == loggedInPlayer?.turnOrder || index + 2 == loggedInPlayer?.turnOrder).map(p => p.name).join(' → ')})
@@ -757,7 +757,7 @@
     <div class="card" style="grid-column: 1 / -1;">
       <h3>Your Turn History</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">Here you can review your personal turn history, including net changes and balances for each round. This can be helpful if you want to compare how you are doing with previous turns.</div>
+        <div class="card-tip">Here you can <strong>review your personal turn history</strong>, including net changes and balances for each round. This can be helpful if you want to compare how you are doing with previous turns.</div>
       {/if}
       {#if !loggedInPlayer?.history || loggedInPlayer.history.length === 0}
         <p>No turns completed yet.</p>
@@ -805,14 +805,14 @@
     margin-bottom: var(--spacing-md);
     border-bottom: 2px solid var(--color-border);
   }
-  
+
   .hero h1 {
     font-size: clamp(2.5rem, 10vw, 4.5rem);
     margin-bottom: var(--spacing-sm);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
-  
+
   .subtitle {
     font-size: 1.5rem;
     color: var(--color-text-secondary);
@@ -841,7 +841,7 @@
     font-size: 1.25rem;
     margin-bottom: var(--spacing-lg);
   }
-  
+
   .actions {
     display: flex;
     gap: var(--spacing-md);

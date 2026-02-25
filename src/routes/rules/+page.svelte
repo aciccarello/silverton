@@ -54,7 +54,7 @@
 	<li>Consider (mostly) ignoring turn order and allow players to play simultaneously per phase to speed up the game</li>
   </ul>
 
-  <h2>Game Turn Sequence</h2>
+  <h2 id="game-turn-sequence">Game Turn Sequence</h2>
   <p>
 	Each turn in Silverton corresponds to a season.
 	During a season all the players have a chance to expand their mining empire.
@@ -66,7 +66,7 @@
 	This step determines the order players play the following steps.
 	In this app the turn order is established automatically at the start of each turn and is visible on each player's dashboard under the list of players.
   </p>
-  
+
   <h3>II. Place Prospectors and Surveyors</h3>
   <p>
 	Make a bid for the tracks, claims, and contracts you want.
@@ -75,7 +75,7 @@
   <p>
 	<strong>When you finish this phase, click the "I'm Done Prospecting" button to indicate to others that you are done.</strong>
   </p>
-  
+
   <h4>Surveyors</h4>
   <p>
 	Place your surveyor on the track you want to build.
@@ -86,7 +86,7 @@
 	You may also choose to use your surveyor to dismantle a track you own.
 	The bank pays $10 times the distance of the segment.
   </p>
-  
+
   <h4>Prospectors</h4>
   <p>
 	You may place your prospector on any of the following:
@@ -111,15 +111,39 @@
   </p>
 
   <h3>III. Resolve Disputes</h3>
-  <p>
-    While they do not occur every turn, sometimes two players prospect or survey the same resource.
-	TODO: Explain
-  </p>
+  <p>While they do not occur every turn, sometimes two players prospect or survey the same resource and the conflict needs to be resolved. During this phase, players will roll dice to determine who wins. Be aware that disputes involve risk for all players. The specific process depends on the type of disupte.</p>
+
+  <h4>General Process</h4>
+  <p>Most disputes share the same general process:</p>
+  <ol>
+    <li>Each involved player rolls two dice and adds the bonus (+1 or +2) indicated on their specific piece.</li>
+    <li>The player with the highest total wins the resource.</li>
+    <li>If the result is a tie, the pieces remain in place until the next turn, at which point they can be moved or the players can compete again.</li>
+    <li>All losing pieces are returned to their owners and cannot take any further actions for the rest of the turn.</li>
+  </ol>
+
+  <h4>Surveyor Parallel Route Rule</h4>
+  <p>The surveyor dispute follows the general process, but can be avoided if the segment has an identical parallel option (same cities and cost).</p>
+
+  <h4>Prospector Claim Bonus</h4>
+  <p>A player receives an additional <strong>+3 bonus</strong> if they already have a track connecting their home city to the city listed on the claim card.</p>
+
+  <h4>Prospector Passenger Card Dispute</h4>
+  <p>A player with a shorter route receives a bonus equal to the difference in distance between their route and their opponent's route.</p>
+
+  <h4>Stealing Passenger Routes</h4>
+  <p>A player attempting to "steal" a route must pay the purchase price to the bank first. Both players roll two dice, and the player with the shorter route adds the distance difference to their roll. If the challenger's total is higher, they take the card.</p>
+
+  <h4>Special Disputes</h4>
+  <p>If two players place surveyors on different segments that would eventually make one player's route useless (e.g., two routes funneling into a single city where only one can exit), either player may call for a dispute roll to determine who gets to proceed.</p>
+
+  <h4>The "Jail" Rule</h4>
+  <p>In any dispute roll (Surveyor or Prospector), if a player rolls a <strong>natural "2"</strong> (snake eyes) before any bonuses are added, their piece is immediately sent to <strong>Jail</strong>. The results of the dispute are still determined based on that roll before the piece is arrested.</p>
 
   <h3>IV. Construction and Operation</h3>
   <p>
-    TODO: Explain all this complexity.
-	Officially, the first player should complete all 7 steps before the next player starts.
+    This is the phase where you will build your railroad and operate your mines.
+    Officially, the first player should complete all 7 steps before the next player starts.
   </p>
   <p>
 	<strong>When you finish this phase, click the "I'm Done Operating" button to save your balance adjustment and indicate to others that you are done.</strong>
@@ -181,7 +205,7 @@
 	Note that you can only sell freight from 2 claims per turn and markets may have a cap on how much can be sold per player per turn.
 	You also may not deliver loads over white segments during winter turns.
   </p>
-  
+
   <h4>7. Pay Fines</h4>
   <p>
 	Event cards from prospecting the deck may involve paying fines.
@@ -220,7 +244,7 @@
     margin-top: 0;
   }
 
-  ul {
+  ul, ol {
     padding-left: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
   }
