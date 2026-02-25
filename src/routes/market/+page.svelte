@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import Dice from '$lib/components/Dice.svelte';
+  import { onMount } from "svelte";
+  import Dice from "$lib/components/Dice.svelte";
 
   const GOLD_PRICES = [350, 325, 300, 275, 250, 250, 225, 200, 175, 150];
   const COPPER_PRICES = [400, 320, 280, 240, 200, 200, 160, 140, 120, 100];
@@ -8,98 +8,124 @@
 
   const LUMBER_PRICES = [300, 240, 200, 160, 120, 100, 80, 60, 40, 30];
   const COAL_PRICES = [140, 120, 100, 80, 60, 60, 40, 30, 20, 20];
-  const MAX_GLOBAL_ROWS = Math.max(GOLD_PRICES.length, COPPER_PRICES.length, SILVER_PRICES.length);
+  const MAX_GLOBAL_ROWS = Math.max(
+    GOLD_PRICES.length,
+    COPPER_PRICES.length,
+    SILVER_PRICES.length,
+  );
 
   const CITY_SHORT: Record<string, string> = {
-    'Denver': 'Denver',
-    'Salt Lake City': 'SLC',
-    'Pueblo': 'Pueblo',
-    'Santa Fe': 'Santa Fe',
-    'El Paso': 'El Paso'
+    Denver: "Denver",
+    "Salt Lake City": "SLC",
+    Pueblo: "Pueblo",
+    "Santa Fe": "Santa Fe",
+    "El Paso": "El Paso",
   };
 
   const SALE_LIMIT_LUMBER: Record<string, number> = {
-    'Denver': 10,
-    'Salt Lake City': 8,
-    'Pueblo': 6,
-    'Santa Fe': 6,
-    'El Paso': 8
+    Denver: 10,
+    "Salt Lake City": 8,
+    Pueblo: 6,
+    "Santa Fe": 6,
+    "El Paso": 8,
   };
   const SALE_LIMIT_COAL: Record<string, number> = {
-    'Denver': 16,
-    'Salt Lake City': 10,
-    'Pueblo': 8,
-    'Santa Fe': 8,
-    'El Paso': 8
+    Denver: 16,
+    "Salt Lake City": 10,
+    Pueblo: 8,
+    "Santa Fe": 8,
+    "El Paso": 8,
   };
 
   const BLOCKED_LUMBER: Record<string, number[]> = {
-    'Denver': [300, 240, 30],
-    'Salt Lake City': [60, 40, 30],
-    'Pueblo': [300, 240, 30],
-    'Santa Fe': [300, 240, 200],
-    'El Paso': [300, 240, 30]
+    Denver: [300, 240, 30],
+    "Salt Lake City": [60, 40, 30],
+    Pueblo: [300, 240, 30],
+    "Santa Fe": [300, 240, 200],
+    "El Paso": [300, 240, 30],
   };
 
   const BLOCKED_COAL: Record<string, number[]> = {
-    'Denver': [20, 20],
-    'Salt Lake City': [140, 120],
-    'Pueblo': [140, 120, 100],
-    'Santa Fe': [140, 20],
-    'El Paso': [20, 20]
+    Denver: [20, 20],
+    "Salt Lake City": [140, 120],
+    Pueblo: [140, 120, 100],
+    "Santa Fe": [140, 20],
+    "El Paso": [20, 20],
   };
 
   const STARTING_GLOBAL_INDEX: Record<string, number> = {
     gold: 5, // 250 (second)
     copper: 5, // 200 (second)
-    silver: 4 // 200 (second)
+    silver: 4, // 200 (second)
   };
 
   const STARTING_LUMBER_ROW_INDEX: Record<string, number> = {
-    'Denver': LUMBER_PRICES.indexOf(100),
-    'Salt Lake City': LUMBER_PRICES.indexOf(120),
-    'Pueblo': LUMBER_PRICES.indexOf(100),
-    'Santa Fe': LUMBER_PRICES.indexOf(80),
-    'El Paso': LUMBER_PRICES.indexOf(100)
+    Denver: LUMBER_PRICES.indexOf(100),
+    "Salt Lake City": LUMBER_PRICES.indexOf(120),
+    Pueblo: LUMBER_PRICES.indexOf(100),
+    "Santa Fe": LUMBER_PRICES.indexOf(80),
+    "El Paso": LUMBER_PRICES.indexOf(100),
   };
 
   const STARTING_COAL_ROW_INDEX: Record<string, number> = {
-    'Denver': 4, // 60 (first)
-    'Salt Lake City': 5, // 60 (second)
-    'Pueblo': 6, // 40
-    'Santa Fe': 5, // 60 (second)
-    'El Paso': 4 // 60 (first)
+    Denver: 4, // 60 (first)
+    "Salt Lake City": 5, // 60 (second)
+    Pueblo: 6, // 40
+    "Santa Fe": 5, // 60 (second)
+    "El Paso": 4, // 60 (first)
   };
 
   // Market configurations for dice rolling
   const markets = [
-    { name: 'Gold', subtitle: 'Global', dice: 1, color: '#e6a122' },
-    { name: 'Copper', subtitle: 'Global', dice: 1, color: '#b87333' },
-    { name: 'Silver', subtitle: 'Global', dice: 2, color: '#a0a0a0' },
-    { name: 'Lumber', subtitle: 'Denver', dice: 2, color: '#8d6e63' },
-    { name: 'Lumber', subtitle: 'SLC', dice: 2, color: '#8d6e63' },
-    { name: 'Lumber', subtitle: 'Pueblo', dice: 2, color: '#8d6e63' },
-    { name: 'Lumber', subtitle: 'Santa Fe', dice: 2, color: '#8d6e63' },
-    { name: 'Lumber', subtitle: 'El Paso', dice: 2, color: '#8d6e63' },
-    { name: 'Coal', subtitle: 'Denver', dice: 2, color: '#607d8b' },
-    { name: 'Coal', subtitle: 'SLC', dice: 2, color: '#607d8b' },
-    { name: 'Coal', subtitle: 'Pueblo', dice: 2, color: '#607d8b' },
-    { name: 'Coal', subtitle: 'Santa Fe', dice: 2, color: '#607d8b' },
-    { name: 'Coal', subtitle: 'El Paso', dice: 2, color: '#607d8b' }
+    { name: "Gold", subtitle: "Global", dice: 1, color: "#e6a122" },
+    { name: "Copper", subtitle: "Global", dice: 1, color: "#b87333" },
+    { name: "Silver", subtitle: "Global", dice: 2, color: "#a0a0a0" },
+    { name: "Lumber", subtitle: "Denver", dice: 2, color: "#8d6e63" },
+    { name: "Lumber", subtitle: "SLC", dice: 2, color: "#8d6e63" },
+    { name: "Lumber", subtitle: "Pueblo", dice: 2, color: "#8d6e63" },
+    { name: "Lumber", subtitle: "Santa Fe", dice: 2, color: "#8d6e63" },
+    { name: "Lumber", subtitle: "El Paso", dice: 2, color: "#8d6e63" },
+    { name: "Coal", subtitle: "Denver", dice: 2, color: "#607d8b" },
+    { name: "Coal", subtitle: "SLC", dice: 2, color: "#607d8b" },
+    { name: "Coal", subtitle: "Pueblo", dice: 2, color: "#607d8b" },
+    { name: "Coal", subtitle: "Santa Fe", dice: 2, color: "#607d8b" },
+    { name: "Coal", subtitle: "El Paso", dice: 2, color: "#607d8b" },
   ];
 
+  const METAL_MARKET_OFFSET = 0;
+  const LUMBER_MARKET_OFFSET = 3;
+  const COAL_MARKET_OFFSET = 8;
+
+  const METAL_MARKETS = markets.slice(
+    METAL_MARKET_OFFSET,
+    LUMBER_MARKET_OFFSET,
+  );
+  const LUMBER_MARKETS = markets.slice(
+    LUMBER_MARKET_OFFSET,
+    COAL_MARKET_OFFSET,
+  );
+  const COAL_MARKETS = markets.slice(COAL_MARKET_OFFSET);
+
   let turn = $state(1);
-  let global = $state<{ gold: number; copper: number; silver: number }>({ gold: 0, copper: 0, silver: 0 });
-  let cityPrices = $state<{ cityId: number; cityName: string; lumber: number; coal: number }[]>([]);
+  let global = $state<{ gold: number; copper: number; silver: number }>({
+    gold: 0,
+    copper: 0,
+    silver: 0,
+  });
+  let cityPrices = $state<
+    { cityId: number; cityName: string; lumber: number; coal: number }[]
+  >([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
   // State for dice rolls
-  let marketRolls = $state(markets.map(() => ({
-    results: [] as number[],
-    isRolling: false,
-    sum: 0
-  })));
+  let marketRolls = $state(
+    markets.map(() => ({
+      results: [] as number[],
+      isRolling: false,
+      sum: 0,
+    })),
+  );
 
   let isGlobalRolling = $state(false);
 
@@ -107,18 +133,18 @@
     loading = true;
     error = null;
     try {
-      const stateRes = await fetch('/api/state');
+      const stateRes = await fetch("/api/state");
       const state = await stateRes.json();
       const turnNumber = state?.turnNumber ?? 1;
       turn = turnNumber;
 
       const marketRes = await fetch(`/api/market?turn=${turnNumber}`);
-      if (!marketRes.ok) throw new Error('Failed to load market');
+      if (!marketRes.ok) throw new Error("Failed to load market");
       const data = await marketRes.json();
       global = data.global ?? global;
       cityPrices = data.cityPrices ?? [];
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to load market';
+      error = e instanceof Error ? e.message : "Failed to load market";
     } finally {
       loading = false;
     }
@@ -128,13 +154,22 @@
     loadMarket();
   });
 
-  function isCurrentPrice(resource: string, rowIndex: number, cityName?: string, cityResource?: string): boolean {
+  function isCurrentPrice(
+    resource: string,
+    rowIndex: number,
+    cityName?: string,
+    cityResource?: string,
+  ): boolean {
     // The API now returns indices into the price ladders (not raw prices), so we
     // compare against row indices in the chart.
-    if (resource === 'gold' || resource === 'copper' || resource === 'silver') {
+    if (resource === "gold" || resource === "copper" || resource === "silver") {
       return global[resource as keyof typeof global] === rowIndex;
     }
-    if (cityName && cityResource && (cityResource === 'lumber' || cityResource === 'coal')) {
+    if (
+      cityName &&
+      cityResource &&
+      (cityResource === "lumber" || cityResource === "coal")
+    ) {
       const city = cityPrices.find((c) => c.cityName === cityName);
       if (!city) return false;
       return city[cityResource] === rowIndex;
@@ -149,7 +184,10 @@
 
       // Simulate "rolling" animation time
       setTimeout(() => {
-        const results = Array.from({ length: market.dice }, () => Math.floor(Math.random() * 6) + 1);
+        const results = Array.from(
+          { length: market.dice },
+          () => Math.floor(Math.random() * 6) + 1,
+        );
         marketRolls[index].results = results;
         marketRolls[index].sum = results.reduce((a, b) => a + b, 0);
         marketRolls[index].isRolling = false;
@@ -182,6 +220,13 @@
     </div>
     <div class="turn-bar">
       <span class="turn-label">Turn: {turn}</span>
+      <button
+        class="btn btn-primary"
+        onclick={rollAll}
+        disabled={isGlobalRolling}
+      >
+        {isGlobalRolling ? "Rolling All..." : "Roll All Dice"}
+      </button>
       <a href="/" class="btn btn-outline">Back to Dashboard</a>
     </div>
   </div>
@@ -213,40 +258,58 @@
               <th class="group-header">Silver</th>
             </tr>
             <tr class="sub-header">
-              <th class="price-col">Price</th>
+              <th class="price-col">Price Index</th>
               <th></th>
-              <th class="price-col">Price</th>
+              <th class="price-col">Price Index</th>
               <th></th>
-              <th class="price-col">Price</th>
+              <th class="price-col">Price Index</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {#each Array(MAX_GLOBAL_ROWS) as _, i}
-              <tr>
-                <td class="price-col">{GOLD_PRICES[i] ?? ''}</td>
+              <tr class="price-row">
+                <td class="price-col">{GOLD_PRICES[i] ?? ""}</td>
                 <td
-                  class={GOLD_PRICES[i] != null ? 'shaded' : 'cell-empty'}
-                  class:starting-cell={GOLD_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.gold}
-                  title={GOLD_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.gold ? 'Starting price' : undefined}
+                  class={GOLD_PRICES[i] != null ? "shaded" : "cell-empty"}
+                  class:starting-cell={GOLD_PRICES[i] != null &&
+                    i === STARTING_GLOBAL_INDEX.gold}
+                  title={GOLD_PRICES[i] != null &&
+                  i === STARTING_GLOBAL_INDEX.gold
+                    ? "Starting price"
+                    : undefined}
                 >
-                  {#if GOLD_PRICES[i] != null && isCurrentPrice('gold', i)}<span class="marker">✕</span>{/if}
+                  {#if GOLD_PRICES[i] != null && isCurrentPrice("gold", i)}<span
+                      class="marker">✕</span
+                    >{/if}
                 </td>
-                <td class="price-col">{COPPER_PRICES[i] ?? ''}</td>
+                <td class="price-col">{COPPER_PRICES[i] ?? ""}</td>
                 <td
-                  class={COPPER_PRICES[i] != null ? 'shaded' : 'cell-empty'}
-                  class:starting-cell={COPPER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.copper}
-                  title={COPPER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.copper ? 'Starting price' : undefined}
+                  class={COPPER_PRICES[i] != null ? "shaded" : "cell-empty"}
+                  class:starting-cell={COPPER_PRICES[i] != null &&
+                    i === STARTING_GLOBAL_INDEX.copper}
+                  title={COPPER_PRICES[i] != null &&
+                  i === STARTING_GLOBAL_INDEX.copper
+                    ? "Starting price"
+                    : undefined}
                 >
-                  {#if COPPER_PRICES[i] != null && isCurrentPrice('copper', i)}<span class="marker">✕</span>{/if}
+                  {#if COPPER_PRICES[i] != null && isCurrentPrice("copper", i)}<span
+                      class="marker">✕</span
+                    >{/if}
                 </td>
-                <td class="price-col">{SILVER_PRICES[i] ?? ''}</td>
+                <td class="price-col">{SILVER_PRICES[i] ?? ""}</td>
                 <td
-                  class={SILVER_PRICES[i] != null ? 'shaded' : 'cell-empty'}
-                  class:starting-cell={SILVER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.silver}
-                  title={SILVER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.silver ? 'Starting price' : undefined}
+                  class={SILVER_PRICES[i] != null ? "shaded" : "cell-empty"}
+                  class:starting-cell={SILVER_PRICES[i] != null &&
+                    i === STARTING_GLOBAL_INDEX.silver}
+                  title={SILVER_PRICES[i] != null &&
+                  i === STARTING_GLOBAL_INDEX.silver
+                    ? "Starting price"
+                    : undefined}
                 >
-                  {#if SILVER_PRICES[i] != null && isCurrentPrice('silver', i)}<span class="marker">✕</span>{/if}
+                  {#if SILVER_PRICES[i] != null && isCurrentPrice("silver", i)}<span
+                      class="marker">✕</span
+                    >{/if}
                 </td>
               </tr>
             {/each}
@@ -255,6 +318,38 @@
             <tr class="sale-limit">
               <td>SALE LIMIT</td>
               <td colspan="5">No limit</td>
+            </tr>
+            <tr class="dice-row">
+              <td class="price-col dice-label">Dice</td>
+              {#each METAL_MARKETS as market, idx}
+                <td class="dice-cell">
+                  <Dice
+                    results={marketRolls[METAL_MARKET_OFFSET + idx].results}
+                    isRolling={marketRolls[METAL_MARKET_OFFSET + idx].isRolling}
+                    diceCount={market.dice}
+                  />
+                  <div class="dice-total">
+                    {#if marketRolls[METAL_MARKET_OFFSET + idx].results.length > 0 && !marketRolls[METAL_MARKET_OFFSET + idx].isRolling}
+                      <strong
+                        >{marketRolls[METAL_MARKET_OFFSET + idx].sum}</strong
+                      >
+                    {:else}
+                      -
+                    {/if}
+                  </div>
+                </td>
+                {#if idx < METAL_MARKETS.length - 1}
+                  <td class="price-col"></td>
+                {/if}
+              {/each}
+            </tr>
+            <tr class="formula-row">
+              <td class="price-col dice-label">Calc</td>
+              <td class="formula-cell">1 Die + Qty Sold</td>
+              <td class="price-col"></td>
+              <td class="formula-cell">1 Die + Qty Sold</td>
+              <td class="price-col"></td>
+              <td class="formula-cell">2 Dice + Qty Sold - IDN</td>
             </tr>
           </tfoot>
         </table>
@@ -282,19 +377,24 @@
           </thead>
           <tbody>
             {#each LUMBER_PRICES as price, rowIndex}
-              <tr>
+              <tr class="price-row">
                 <td class="price-col">{price}</td>
                 {#each cityPrices as { cityName }}
                   <td
-                    class={
-                      LUMBER_PRICES.includes(price)
-                        ? (BLOCKED_LUMBER[cityName]?.includes(price) ? 'blocked' : 'shaded')
-                        : 'blocked'
-                    }
-                    class:starting-cell={rowIndex === STARTING_LUMBER_ROW_INDEX[cityName]}
-                    title={rowIndex === STARTING_LUMBER_ROW_INDEX[cityName] ? 'Starting price' : undefined}
+                    class={LUMBER_PRICES.includes(price)
+                      ? BLOCKED_LUMBER[cityName]?.includes(price)
+                        ? "blocked"
+                        : "shaded"
+                      : "blocked"}
+                    class:starting-cell={rowIndex ===
+                      STARTING_LUMBER_ROW_INDEX[cityName]}
+                    title={rowIndex === STARTING_LUMBER_ROW_INDEX[cityName]
+                      ? "Starting price"
+                      : undefined}
                   >
-                    {#if LUMBER_PRICES.includes(price) && isCurrentPrice('lumber', rowIndex, cityName, 'lumber')}<span class="marker">✕</span>{/if}
+                    {#if LUMBER_PRICES.includes(price) && isCurrentPrice("lumber", rowIndex, cityName, "lumber")}<span
+                        class="marker">✕</span
+                      >{/if}
                   </td>
                 {/each}
               </tr>
@@ -304,8 +404,37 @@
             <tr class="sale-limit">
               <td>SALE LIMIT</td>
               {#each cityPrices as { cityName }}
-                <td>{SALE_LIMIT_LUMBER[cityName] ?? '—'}</td>
+                <td>{SALE_LIMIT_LUMBER[cityName] ?? "—"}</td>
               {/each}
+            </tr>
+            <tr class="dice-row">
+              <td class="price-col dice-label">Dice</td>
+              {#each LUMBER_MARKETS as market, idx}
+                <td class="dice-cell">
+                  <Dice
+                    results={marketRolls[LUMBER_MARKET_OFFSET + idx].results}
+                    isRolling={marketRolls[LUMBER_MARKET_OFFSET + idx]
+                      .isRolling}
+                    diceCount={market.dice}
+                  />
+                  <div class="dice-total">
+                    {#if marketRolls[LUMBER_MARKET_OFFSET + idx].results.length > 0 && !marketRolls[LUMBER_MARKET_OFFSET + idx].isRolling}
+                      <strong
+                        >{marketRolls[LUMBER_MARKET_OFFSET + idx].sum}</strong
+                      >
+                    {:else}
+                      -
+                    {/if}
+                  </div>
+                </td>
+              {/each}
+            </tr>
+            <tr class="formula-row">
+              <td class="price-col dice-label">Calc</td>
+              <td class="formula-cell" colspan="5">2 Dice + Qty Sold - IDN</td>
+              <!-- {#each cityPrices as _}
+                <td class="formula-cell">2 Dice + Qty Sold - IDN</td>
+              {/each} -->
             </tr>
           </tfoot>
         </table>
@@ -333,19 +462,24 @@
           </thead>
           <tbody>
             {#each COAL_PRICES as price, rowIndex}
-              <tr>
+              <tr class="price-row">
                 <td class="price-col">{price}</td>
                 {#each cityPrices as { cityName }}
                   <td
-                    class={
-                      COAL_PRICES.includes(price)
-                        ? (BLOCKED_COAL[cityName]?.includes(price) ? 'blocked' : 'shaded')
-                        : 'blocked'
-                    }
-                    class:starting-cell={rowIndex === STARTING_COAL_ROW_INDEX[cityName]}
-                    title={rowIndex === STARTING_COAL_ROW_INDEX[cityName] ? 'Starting price' : undefined}
+                    class={COAL_PRICES.includes(price)
+                      ? BLOCKED_COAL[cityName]?.includes(price)
+                        ? "blocked"
+                        : "shaded"
+                      : "blocked"}
+                    class:starting-cell={rowIndex ===
+                      STARTING_COAL_ROW_INDEX[cityName]}
+                    title={rowIndex === STARTING_COAL_ROW_INDEX[cityName]
+                      ? "Starting price"
+                      : undefined}
                   >
-                    {#if COAL_PRICES.includes(price) && isCurrentPrice('coal', rowIndex, cityName, 'coal')}<span class="marker">✕</span>{/if}
+                    {#if COAL_PRICES.includes(price) && isCurrentPrice("coal", rowIndex, cityName, "coal")}<span
+                        class="marker">✕</span
+                      >{/if}
                   </td>
                 {/each}
               </tr>
@@ -355,88 +489,46 @@
             <tr class="sale-limit">
               <td>SALE LIMIT</td>
               {#each cityPrices as { cityName }}
-                <td>{SALE_LIMIT_COAL[cityName] ?? '—'}</td>
+                <td>{SALE_LIMIT_COAL[cityName] ?? "—"}</td>
               {/each}
+            </tr>
+            <tr class="dice-row">
+              <td class="price-col dice-label">Dice</td>
+              {#each COAL_MARKETS as market, idx}
+                <td class="dice-cell">
+                  <Dice
+                    results={marketRolls[COAL_MARKET_OFFSET + idx].results}
+                    isRolling={marketRolls[COAL_MARKET_OFFSET + idx].isRolling}
+                    diceCount={market.dice}
+                  />
+                  <div class="dice-total">
+                    {#if marketRolls[COAL_MARKET_OFFSET + idx].results.length > 0 && !marketRolls[COAL_MARKET_OFFSET + idx].isRolling}
+                      <strong
+                        >{marketRolls[COAL_MARKET_OFFSET + idx].sum}</strong
+                      >
+                    {:else}
+                      -
+                    {/if}
+                  </div>
+                </td>
+              {/each}
+            </tr>
+            <tr class="formula-row">
+              <td class="price-col dice-label">Calc</td>
+              <td class="formula-cell" colspan="2"
+                >2 Dice + (Qty Sold / 2) - IDN</td
+              >
+              <td class="formula-cell" colspan="3">2 Dice + Qty Sold - IDN</td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <p class="current-legend">✕ indicates the current selling price for this turn.</p>
+      <p class="current-legend">
+        ✕ indicates the current selling price for this turn.
+      </p>
       <p class="chart-footer-row">NUMBER OF PLAYERS: 1–6</p>
     </div>
   {/if}
-</div>
-
-<!-- Dice rolling interface (existing page content), now below prices -->
-<div class="page-container">
-  <div class="hero animate-entrance">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
-      <div>
-        <h1>Price Change Dice</h1>
-        <p class="subtitle stagger-1">Virtual Dice for Price Calculations</p>
-      </div>
-      <button
-        class="btn btn-primary animate-entrance stagger-2"
-        onclick={rollAll}
-        disabled={isGlobalRolling}
-        style="margin-bottom: var(--spacing-sm);"
-      >
-        {isGlobalRolling ? 'Rolling All...' : 'Roll All Dice'}
-      </button>
-    </div>
-  </div>
-
-  <div class="card table-card animate-entrance stagger-2">
-    <table class="market-table">
-      <thead>
-        <tr>
-          <th>Resource</th>
-          <th>Market</th>
-          <th class="results-col">Results</th>
-          <th>Total</th>
-          <th style="text-align: right;">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each markets as market, i}
-          <tr class="market-row">
-            <td>
-              <div
-                class="resource-tag"
-                style="background-color: {market.color}20; color: {market.color}; border-color: {market.color}40;"
-              >
-                {market.name}
-              </div>
-            </td>
-            <td><span class="region-text">{market.subtitle}</span></td>
-            <td class="results-col">
-              <Dice
-                results={marketRolls[i].results}
-                isRolling={marketRolls[i].isRolling}
-                diceCount={market.dice}
-              />
-            </td>
-            <td>
-              {#if marketRolls[i].results.length > 0 && !marketRolls[i].isRolling}
-                <strong class="sum-total">{marketRolls[i].sum}</strong>
-              {:else}
-                -
-              {/if}
-            </td>
-            <td style="text-align: right;">
-              <button
-                class="btn btn-sm {marketRolls[i].results.length > 0 ? 'btn-outline' : 'btn-primary'}"
-                onclick={() => rollDice(i)}
-                disabled={marketRolls[i].isRolling}
-              >
-                {marketRolls[i].isRolling ? '...' : (marketRolls[i].results.length > 0 ? 'Re-roll' : 'Roll')}
-              </button>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
 </div>
 
 <style>
@@ -553,6 +645,43 @@
 
   .price-chart td.starting-cell {
     border: 2px solid grey;
+  }
+
+  .price-chart tr.price-row td {
+    height: 1.9rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+  }
+
+  .dice-row .dice-label {
+    text-align: right;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .dice-cell {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .dice-total {
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+
+  .formula-row .dice-label {
+    text-align: right;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+  }
+
+  .formula-cell {
+    font-size: 0.65rem;
+    color: var(--color-text-secondary);
+    line-height: 1.1;
   }
 
   .current-legend {
