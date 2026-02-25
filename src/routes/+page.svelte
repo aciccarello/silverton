@@ -185,6 +185,19 @@
 
   let loggedInPlayer = $derived(gameStore.players.find(p => p.id === loggedInUserId));
 
+  const MARKETS = ['Denver', 'El Paso', 'Salt Lake City', 'Pueblo', 'Santa Fe'] as const;
+
+  function toggleMarket(market: typeof MARKETS[number]) {
+    if (!loggedInPlayer) return;
+    const current = loggedInPlayer.marketsInPlay ?? [];
+    if (current.includes(market)) {
+      loggedInPlayer.marketsInPlay = current.filter((m) => m !== market);
+    } else {
+      loggedInPlayer.marketsInPlay = [...current, market];
+    }
+    savePlayer($state.snapshot(loggedInPlayer), 'Updated markets in play');
+  }
+
   const SEASONS = ['Spring', 'Summer', 'Fall', 'Winter'];
   let season = $derived(SEASONS[(gameStore.turnNumber - 1) % 4]);
   let isWinter = $derived(season === 'Winter');
@@ -514,44 +527,60 @@
     <!-- Player Stats Widget -->
     {#if loggedInPlayer}
         <div class="card" style="border-top: 4px solid {loggedInPlayer.color}; grid-column: 1 / -1;">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--spacing-md);">
-                <h2>Your balance</h2>
-                <div style="display: flex; align-items: baseline; gap: var(--spacing-md); flex-wrap: wrap;">
-                  <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-md); gap: var(--spacing-lg); flex-wrap: wrap;">
+                <h2>Your Game</h2>
 
-                  <!-- Color Picker Dropdown -->
-                  <div class="color-picker-container">
-                    <button
-                      class="color-picker-trigger"
-                      onclick={() => isColorDropdownOpen = !isColorDropdownOpen}
-                      style="border-color: {loggedInPlayer.color};"
-                    >
-                      <div class="swatch-preview" style="background-color: {loggedInPlayer.color};"></div>
-                      <span class="color-name">{PLAYER_COLORS.find(c => c.hex === loggedInPlayer?.color)?.name || 'Custom'}</span>
-                      <span class="chevron" class:open={isColorDropdownOpen}>▼</span>
-                    </button>
+              <div style="display: flex; align-items: baseline; gap: var(--spacing-md); flex-wrap: wrap;">
+                <span style="font-size: 2rem; font-family: var(--font-heading); color: var(--color-primary);">${loggedInPlayer.money}</span>
 
-                    {#if isColorDropdownOpen}
-                      <div class="color-dropdown-menu card animate-entrance">
-                        {#each PLAYER_COLORS as color}
-                          <button
-                            class="color-dropdown-item"
-                            onclick={() => {
-                              updatePlayerColor(color.hex);
-                              isColorDropdownOpen = false;
-                            }}
-                          >
-                            <div class="color-swatch-sm" style="background-color: {color.hex};"></div>
-                            <span>{color.name}</span>
-                            {#if loggedInPlayer.color === color.hex}
-                              <span class="check">✓</span>
-                            {/if}
-                          </button>
-                        {/each}
-                      </div>
-                    {/if}
-                  </div>
+                <!-- Color Picker Dropdown -->
+                <div class="color-picker-container">
+                  <button
+                    class="color-picker-trigger"
+                    onclick={() => isColorDropdownOpen = !isColorDropdownOpen}
+                    style="border-color: {loggedInPlayer.color};"
+                  >
+                    <div class="swatch-preview" style="background-color: {loggedInPlayer.color};"></div>
+                    <span class="color-name">{PLAYER_COLORS.find(c => c.hex === loggedInPlayer?.color)?.name || 'Custom'}</span>
+                    <span class="chevron" class:open={isColorDropdownOpen}>▼</span>
+                  </button>
+
+                  {#if isColorDropdownOpen}
+                    <div class="color-dropdown-menu card animate-entrance">
+                      {#each PLAYER_COLORS as color}
+                        <button
+                          class="color-dropdown-item"
+                          onclick={() => {
+                            updatePlayerColor(color.hex);
+                            isColorDropdownOpen = false;
+                          }}
+                        >
+                          <div class="color-swatch-sm" style="background-color: {color.hex};"></div>
+                          <span>{color.name}</span>
+                          {#if loggedInPlayer.color === color.hex}
+                            <span class="check">✓</span>
+                          {/if}
+                        </button>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: var(--color-text-secondary);">
+              <div><strong>Your Markets:</strong></div>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.4rem 2rem;">
+                {#each MARKETS as market}
+                  <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                    <input
+                      type="checkbox"
+                      checked={loggedInPlayer.marketsInPlay?.includes(market)}
+                      onchange={() => toggleMarket(market)}
+                    />
+                    <span>{market}</span>
+                  </label>
+                {/each}
+              </div>
             </div>
           {#if showGettingStartedTips}
             <div class="card-tip" transition:cardTipFlip>
