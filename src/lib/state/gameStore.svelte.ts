@@ -10,6 +10,8 @@ export interface TurnHistoryEntry {
 }
 
 
+export type MarketName = 'Denver' | 'El Paso' | 'Salt Lake City' | 'Pueblo' | 'Santa Fe';
+
 export interface Player {
     id: string;
     name: string;
@@ -17,6 +19,7 @@ export interface Player {
     money: number;
     claims: number;
     score: number;
+    marketsInPlay?: MarketName[];
     prospectReady?: boolean;
     operateReady?: boolean;
     turnOrder?: number;
