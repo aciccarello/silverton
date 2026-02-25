@@ -2,12 +2,12 @@
   import { onMount } from "svelte";
   import Dice from "$lib/components/Dice.svelte";
 
-  const GOLD_PRICES = [350, 325, 300, 275, 250, 250, 225, 200, 175, 150];
-  const COPPER_PRICES = [400, 320, 280, 240, 200, 200, 160, 140, 120, 100];
-  const SILVER_PRICES = [400, 300, 240, 200, 200, 200, 180, 160, 120, 100];
+  const GOLD_PRICES = [150, 175, 200, 225, 250, 250, 275, 300, 325, 350];
+  const COPPER_PRICES = [100, 120, 140, 160, 200, 200, 240, 280, 320, 400];
+  const SILVER_PRICES = [100, 120, 160, 180, 200, 200, 200, 240, 300, 400];
 
-  const LUMBER_PRICES = [300, 240, 200, 160, 120, 100, 80, 60, 40, 30];
-  const COAL_PRICES = [140, 120, 100, 80, 60, 60, 40, 30, 20, 20];
+  const LUMBER_PRICES = [30, 40, 60, 80, 100, 120, 160, 200, 240, 300];
+  const COAL_PRICES = [20, 20, 30, 40, 60, 60, 80, 100, 120, 140];
   const MAX_GLOBAL_ROWS = Math.max(
     GOLD_PRICES.length,
     COPPER_PRICES.length,
@@ -38,41 +38,41 @@
   };
 
   const BLOCKED_LUMBER: Record<string, number[]> = {
-    Denver: [300, 240, 30],
-    "Salt Lake City": [60, 40, 30],
-    Pueblo: [300, 240, 30],
-    "Santa Fe": [300, 240, 200],
-    "El Paso": [300, 240, 30],
+    Denver: [9, 8, 0],
+    "Salt Lake City": [2, 1, 0],
+    Pueblo: [9, 8, 0],
+    "Santa Fe": [9, 8, 7],
+    "El Paso": [9, 8, 0],
   };
 
   const BLOCKED_COAL: Record<string, number[]> = {
-    Denver: [20, 20],
-    "Salt Lake City": [140, 120],
-    Pueblo: [140, 120, 100],
-    "Santa Fe": [140, 20],
-    "El Paso": [20, 20],
+    Denver: [0, 1],
+    "Salt Lake City": [9, 8],
+    Pueblo: [9, 8, 7],
+    "Santa Fe": [9, 0],
+    "El Paso": [0, 1],
   };
 
   const STARTING_GLOBAL_INDEX: Record<string, number> = {
-    gold: 5, // 250 (second)
-    copper: 5, // 200 (second)
-    silver: 4, // 200 (second)
+    gold: 4, // 250 (lower)
+    copper: 4, // 200 (lower)
+    silver: 5, // 200 (middle)
   };
 
   const STARTING_LUMBER_ROW_INDEX: Record<string, number> = {
-    Denver: LUMBER_PRICES.indexOf(100),
-    "Salt Lake City": LUMBER_PRICES.indexOf(120),
-    Pueblo: LUMBER_PRICES.indexOf(100),
-    "Santa Fe": LUMBER_PRICES.indexOf(80),
-    "El Paso": LUMBER_PRICES.indexOf(100),
+    Denver: 4, // 100
+    "Salt Lake City": 5, // 120
+    Pueblo: 4, // 100
+    "Santa Fe": 3, // 80
+    "El Paso": 4, // 100
   };
 
   const STARTING_COAL_ROW_INDEX: Record<string, number> = {
-    Denver: 4, // 60 (first)
-    "Salt Lake City": 5, // 60 (second)
-    Pueblo: 6, // 40
-    "Santa Fe": 5, // 60 (second)
-    "El Paso": 4, // 60 (first)
+    Denver: 5, // 60 (higher)
+    "Salt Lake City": 4, // 60 (lower)
+    Pueblo: 3, // 40
+    "Santa Fe": 4, // 60 (lower)
+    "El Paso": 5, // 60 (higher)
   };
 
   // Market configurations for dice rolling
@@ -112,9 +112,17 @@
     copper: 0,
     silver: 0,
   });
+  let previousGlobal = $state<{
+    gold: number;
+    copper: number;
+    silver: number;
+  } | null>(null);
   let cityPrices = $state<
     { cityId: number; cityName: string; lumber: number; coal: number }[]
   >([]);
+  let previousCityPrices = $state<
+    { cityId: number; cityName: string; lumber: number; coal: number }[] | null
+  >(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
@@ -128,6 +136,11 @@
   );
 
   let isGlobalRolling = $state(false);
+  let isSaving = $state(false);
+
+  // State for price diffs
+  let globalDiffs = $state({ gold: 0, copper: 0, silver: 0 });
+  let cityDiffs = $state<Record<number, { lumber: number; coal: number }>>({});
 
   async function loadMarket() {
     loading = true;
@@ -143,6 +156,29 @@
       const data = await marketRes.json();
       global = data.global ?? global;
       cityPrices = data.cityPrices ?? [];
+
+      // Fetch previous turn data for comparison
+      if (turnNumber > 1) {
+        const prevRes = await fetch(`/api/market?turn=${turnNumber - 1}`);
+        if (prevRes.ok) {
+          const prevData = await prevRes.json();
+          previousGlobal = prevData.global;
+          previousCityPrices = prevData.cityPrices;
+        } else {
+          previousGlobal = null;
+          previousCityPrices = null;
+        }
+      } else {
+        previousGlobal = null;
+        previousCityPrices = null;
+      }
+
+      // Initialize diffs for each city
+      cityPrices.forEach((cp) => {
+        if (!cityDiffs[cp.cityId]) {
+          cityDiffs[cp.cityId] = { lumber: 0, coal: 0 };
+        }
+      });
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load market";
     } finally {
@@ -177,6 +213,39 @@
     return false;
   }
 
+  function isPreviousPrice(
+    resource: string,
+    rowIndex: number,
+    cityName?: string,
+    cityResource?: string,
+  ): boolean {
+    if (!previousGlobal) return false;
+
+    if (resource === "gold" || resource === "copper" || resource === "silver") {
+      const prevIdx = previousGlobal[resource as keyof typeof global];
+      const curIdx = global[resource as keyof typeof global];
+      return prevIdx === rowIndex && prevIdx !== curIdx;
+    }
+
+    if (
+      cityName &&
+      cityResource &&
+      (cityResource === "lumber" || cityResource === "coal")
+    ) {
+      if (!previousCityPrices) return false;
+      const city = cityPrices.find((c) => c.cityName === cityName);
+      const prevCity = previousCityPrices.find(
+        (c) => c.cityId === city?.cityId,
+      );
+      if (!city || !prevCity) return false;
+
+      const prevIdx = prevCity[cityResource];
+      const curIdx = city[cityResource];
+      return prevIdx === rowIndex && prevIdx !== curIdx;
+    }
+    return false;
+  }
+
   function rollDice(index: number) {
     return new Promise<void>((resolve) => {
       const market = markets[index];
@@ -205,6 +274,74 @@
     }
     isGlobalRolling = false;
   }
+
+  async function savePrices() {
+    isSaving = true;
+    try {
+      // 1. Save market indices for the next turn
+      const marketPayload = {
+        turn,
+        global: {
+          gold: Math.max(
+            0,
+            Math.min(GOLD_PRICES.length - 1, global.gold + globalDiffs.gold),
+          ),
+          copper: Math.max(
+            0,
+            Math.min(
+              COPPER_PRICES.length - 1,
+              global.copper + globalDiffs.copper,
+            ),
+          ),
+          silver: Math.max(
+            0,
+            Math.min(
+              SILVER_PRICES.length - 1,
+              global.silver + globalDiffs.silver,
+            ),
+          ),
+        },
+        cityPrices: cityPrices.map((cp) => ({
+          cityId: cp.cityId,
+          lumber: Math.max(
+            0,
+            Math.min(
+              LUMBER_PRICES.length - 1,
+              cp.lumber + (cityDiffs[cp.cityId]?.lumber ?? 0),
+            ),
+          ),
+          coal: Math.max(
+            0,
+            Math.min(
+              COAL_PRICES.length - 1,
+              cp.coal + (cityDiffs[cp.cityId]?.coal ?? 0),
+            ),
+          ),
+        })),
+      };
+
+      const marketRes = await fetch("/api/market", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(marketPayload),
+      });
+
+      if (!marketRes.ok) throw new Error("Failed to save market prices");
+
+      // 2. Reset diffs and reload state
+      globalDiffs = { gold: 0, copper: 0, silver: 0 };
+      Object.keys(cityDiffs).forEach((key) => {
+        const id = Number(key);
+        cityDiffs[id] = { lumber: 0, coal: 0 };
+      });
+
+      await loadMarket();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to save prices");
+    } finally {
+      isSaving = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -223,9 +360,16 @@
       <button
         class="btn btn-primary"
         onclick={rollAll}
-        disabled={isGlobalRolling}
+        disabled={isGlobalRolling || isSaving}
       >
         {isGlobalRolling ? "Rolling All..." : "Roll All Dice"}
+      </button>
+      <button
+        class="btn btn-success"
+        onclick={savePrices}
+        disabled={isGlobalRolling || isSaving}
+      >
+        {isSaving ? "Saving..." : "Save Results"}
       </button>
       <a href="/" class="btn btn-outline">Back to Dashboard</a>
     </div>
@@ -245,7 +389,7 @@
             <col class="col-data" />
             <col class="col-data" />
             <col class="col-data" />
-            <col class="col-price" />
+            <col class="col-data" />
             <col class="col-data" />
           </colgroup>
           <thead>
@@ -267,7 +411,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each Array(MAX_GLOBAL_ROWS) as _, i}
+            {#each Array.from({ length: MAX_GLOBAL_ROWS }, (_, i) => MAX_GLOBAL_ROWS - 1 - i) as i}
               <tr class="price-row">
                 <td class="price-col">{GOLD_PRICES[i] ?? ""}</td>
                 <td
@@ -281,6 +425,9 @@
                 >
                   {#if GOLD_PRICES[i] != null && isCurrentPrice("gold", i)}<span
                       class="marker">✕</span
+                    >{/if}
+                  {#if GOLD_PRICES[i] != null && isPreviousPrice("gold", i)}<span
+                      class="marker marker-prev">✕</span
                     >{/if}
                 </td>
                 <td class="price-col">{COPPER_PRICES[i] ?? ""}</td>
@@ -296,6 +443,9 @@
                   {#if COPPER_PRICES[i] != null && isCurrentPrice("copper", i)}<span
                       class="marker">✕</span
                     >{/if}
+                  {#if COPPER_PRICES[i] != null && isPreviousPrice("copper", i)}<span
+                      class="marker marker-prev">✕</span
+                    >{/if}
                 </td>
                 <td class="price-col">{SILVER_PRICES[i] ?? ""}</td>
                 <td
@@ -309,6 +459,9 @@
                 >
                   {#if SILVER_PRICES[i] != null && isCurrentPrice("silver", i)}<span
                       class="marker">✕</span
+                    >{/if}
+                  {#if SILVER_PRICES[i] != null && isPreviousPrice("silver", i)}<span
+                      class="marker marker-prev">✕</span
                     >{/if}
                 </td>
               </tr>
@@ -351,6 +504,20 @@
               <td class="price-col"></td>
               <td class="formula-cell">2 Dice + Qty Sold - IDN</td>
             </tr>
+            <tr class="diff-row">
+              <td class="price-col dice-label">Diff</td>
+              <td class="diff-cell"
+                ><input type="number" bind:value={globalDiffs.gold} /></td
+              >
+              <td class="price-col"></td>
+              <td class="diff-cell"
+                ><input type="number" bind:value={globalDiffs.copper} /></td
+              >
+              <td class="price-col"></td>
+              <td class="diff-cell"
+                ><input type="number" bind:value={globalDiffs.silver} /></td
+              >
+            </tr>
           </tfoot>
         </table>
 
@@ -376,13 +543,13 @@
             </tr>
           </thead>
           <tbody>
-            {#each LUMBER_PRICES as price, rowIndex}
+            {#each Array.from({ length: LUMBER_PRICES.length }, (_, i) => LUMBER_PRICES.length - 1 - i) as rowIndex}
               <tr class="price-row">
-                <td class="price-col">{price}</td>
+                <td class="price-col">{LUMBER_PRICES[rowIndex]}</td>
                 {#each cityPrices as { cityName }}
                   <td
-                    class={LUMBER_PRICES.includes(price)
-                      ? BLOCKED_LUMBER[cityName]?.includes(price)
+                    class={LUMBER_PRICES[rowIndex] != null
+                      ? BLOCKED_LUMBER[cityName]?.includes(rowIndex)
                         ? "blocked"
                         : "shaded"
                       : "blocked"}
@@ -392,8 +559,11 @@
                       ? "Starting price"
                       : undefined}
                   >
-                    {#if LUMBER_PRICES.includes(price) && isCurrentPrice("lumber", rowIndex, cityName, "lumber")}<span
+                    {#if LUMBER_PRICES[rowIndex] != null && isCurrentPrice("lumber", rowIndex, cityName, "lumber")}<span
                         class="marker">✕</span
+                      >{/if}
+                    {#if LUMBER_PRICES[rowIndex] != null && isPreviousPrice("lumber", rowIndex, cityName, "lumber")}<span
+                        class="marker marker-prev">✕</span
                       >{/if}
                   </td>
                 {/each}
@@ -432,9 +602,19 @@
             <tr class="formula-row">
               <td class="price-col dice-label">Calc</td>
               <td class="formula-cell" colspan="5">2 Dice + Qty Sold - IDN</td>
-              <!-- {#each cityPrices as _}
-                <td class="formula-cell">2 Dice + Qty Sold - IDN</td>
-              {/each} -->
+            </tr>
+            <tr class="diff-row">
+              <td class="price-col dice-label">Diff</td>
+              {#each cityPrices as city}
+                <td class="diff-cell">
+                  {#if cityDiffs[city.cityId]}
+                    <input
+                      type="number"
+                      bind:value={cityDiffs[city.cityId].lumber}
+                    />
+                  {/if}
+                </td>
+              {/each}
             </tr>
           </tfoot>
         </table>
@@ -461,13 +641,13 @@
             </tr>
           </thead>
           <tbody>
-            {#each COAL_PRICES as price, rowIndex}
+            {#each Array.from({ length: COAL_PRICES.length }, (_, i) => COAL_PRICES.length - 1 - i) as rowIndex}
               <tr class="price-row">
-                <td class="price-col">{price}</td>
+                <td class="price-col">{COAL_PRICES[rowIndex]}</td>
                 {#each cityPrices as { cityName }}
                   <td
-                    class={COAL_PRICES.includes(price)
-                      ? BLOCKED_COAL[cityName]?.includes(price)
+                    class={COAL_PRICES[rowIndex] != null
+                      ? BLOCKED_COAL[cityName]?.includes(rowIndex)
                         ? "blocked"
                         : "shaded"
                       : "blocked"}
@@ -477,8 +657,11 @@
                       ? "Starting price"
                       : undefined}
                   >
-                    {#if COAL_PRICES.includes(price) && isCurrentPrice("coal", rowIndex, cityName, "coal")}<span
+                    {#if COAL_PRICES[rowIndex] != null && isCurrentPrice("coal", rowIndex, cityName, "coal")}<span
                         class="marker">✕</span
+                      >{/if}
+                    {#if COAL_PRICES[rowIndex] != null && isPreviousPrice("coal", rowIndex, cityName, "coal")}<span
+                        class="marker marker-prev">✕</span
                       >{/if}
                   </td>
                 {/each}
@@ -520,13 +703,101 @@
               >
               <td class="formula-cell" colspan="3">2 Dice + Qty Sold - IDN</td>
             </tr>
+            <tr class="diff-row">
+              <td class="price-col dice-label">Diff</td>
+              {#each cityPrices as city}
+                <td class="diff-cell">
+                  {#if cityDiffs[city.cityId]}
+                    <input
+                      type="number"
+                      bind:value={cityDiffs[city.cityId].coal}
+                    />
+                  {/if}
+                </td>
+              {/each}
+            </tr>
           </tfoot>
         </table>
       </div>
       <p class="current-legend">
         ✕ indicates the current selling price for this turn.
       </p>
-      <p class="chart-footer-row">NUMBER OF PLAYERS: 1–6</p>
+    </div>
+
+    <div class="adjustment-reference card">
+      <h2>Price Change Look-up</h2>
+      <div class="ref-grid">
+        <div class="ref-table">
+          <div class="table-header gold">GOLD</div>
+          <div class="table-body">
+            <div class="ref-row"><span>> 7</span><span>-2</span></div>
+            <div class="ref-row"><span>6-7</span><span>-1</span></div>
+            <div class="ref-row"><span>4-5</span><span>NC</span></div>
+            <div class="ref-row"><span>2-3</span><span>+1</span></div>
+            <div class="ref-row"><span>1</span><span>+2</span></div>
+          </div>
+        </div>
+
+        <div class="ref-table">
+          <div class="table-header copper">COPPER</div>
+          <div class="table-body">
+            <div class="ref-row"><span>> 11</span><span>-4</span></div>
+            <div class="ref-row"><span>10-11</span><span>-3</span></div>
+            <div class="ref-row"><span>8-9</span><span>-2</span></div>
+            <div class="ref-row"><span>6-7</span><span>-1</span></div>
+            <div class="ref-row"><span>4-5</span><span>NC</span></div>
+            <div class="ref-row"><span>3</span><span>+1</span></div>
+            <div class="ref-row"><span>2</span><span>+2</span></div>
+            <div class="ref-row"><span>1</span><span>+3</span></div>
+          </div>
+        </div>
+
+        <div class="ref-table">
+          <div class="table-header silver">SILVER</div>
+          <div class="table-body">
+            <div class="ref-row"><span>> 15</span><span>-7</span></div>
+            <div class="ref-row"><span>15</span><span>-6</span></div>
+            <div class="ref-row"><span>14</span><span>-5</span></div>
+            <div class="ref-row"><span>13</span><span>-4</span></div>
+            <div class="ref-row"><span>12</span><span>-3</span></div>
+            <div class="ref-row"><span>10-11</span><span>-2</span></div>
+            <div class="ref-row"><span>8-9</span><span>-1</span></div>
+            <div class="ref-row"><span>6-7</span><span>NC</span></div>
+            <div class="ref-row"><span>4-5</span><span>+1</span></div>
+            <div class="ref-row"><span>3</span><span>+2</span></div>
+            <div class="ref-row"><span>2</span><span>+3</span></div>
+            <div class="ref-row"><span>1</span><span>+4</span></div>
+            <div class="ref-row"><span>&lt; 1</span><span>+5</span></div>
+          </div>
+        </div>
+
+        <div class="ref-table">
+          <div class="table-header lumber">LUMBER</div>
+          <div class="table-body">
+            <div class="ref-row"><span>> 12</span><span>-4</span></div>
+            <div class="ref-row"><span>11-12</span><span>-3</span></div>
+            <div class="ref-row"><span>9-10</span><span>-2</span></div>
+            <div class="ref-row"><span>7-8</span><span>-1</span></div>
+            <div class="ref-row"><span>6</span><span>NC</span></div>
+            <div class="ref-row"><span>4-5</span><span>+1</span></div>
+            <div class="ref-row"><span>2-3</span><span>+2</span></div>
+            <div class="ref-row"><span>&lt; 2</span><span>+3</span></div>
+          </div>
+        </div>
+
+        <div class="ref-table">
+          <div class="table-header coal">COAL</div>
+          <div class="table-body">
+            <div class="ref-row"><span>> 12</span><span>-3</span></div>
+            <div class="ref-row"><span>11-12</span><span>-2</span></div>
+            <div class="ref-row"><span>9-10</span><span>-1</span></div>
+            <div class="ref-row"><span>6-8</span><span>NC</span></div>
+            <div class="ref-row"><span>4-5</span><span>+1</span></div>
+            <div class="ref-row"><span>2-3</span><span>+2</span></div>
+            <div class="ref-row"><span>&lt; 2</span><span>+3</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   {/if}
 </div>
@@ -684,16 +955,134 @@
     line-height: 1.1;
   }
 
+  .diff-cell {
+    padding: 0.15rem !important;
+  }
+
+  .diff-cell input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-base);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0.1rem;
+    box-sizing: border-box;
+  }
+
+  .diff-cell input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-success {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #43a047;
+  }
+
+  .btn-success:disabled {
+    background-color: #2e7d32;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   .current-legend {
     margin-top: var(--spacing-md);
     font-size: 0.85rem;
     color: var(--color-text-secondary);
   }
 
+  .adjustment-reference {
+    margin-top: var(--spacing-xl);
+    padding: var(--spacing-lg);
+  }
+
+  .adjustment-reference h2 {
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: var(--spacing-lg);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+  }
+
+  .ref-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+
+  .ref-table {
+    flex: 1;
+    min-width: 140px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--color-bg-elevated);
+  }
+
+  .table-header {
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    background: var(--color-bg-base);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .table-header.gold {
+    color: #e6a122;
+  }
+  .table-header.copper {
+    color: #b87333;
+  }
+  .table-header.silver {
+    color: #a0a0a0;
+  }
+  .table-header.lumber {
+    color: #8d6e63;
+  }
+  .table-header.coal {
+    color: #607d8b;
+  }
+
+  .table-body {
+    padding: 0.25rem 0;
+  }
+
+  .ref-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.85rem;
+    font-family: var(--font-mono);
+  }
+
+  .ref-row:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .ref-row span:last-child {
+    font-weight: bold;
+    color: var(--color-primary);
+  }
+
   .marker {
     color: #42a5f5;
     font-weight: bold;
     font-size: 1.1rem;
+  }
+
+  .marker-prev {
+    color: #616161;
+    opacity: 0.5;
   }
 
   .price-chart tfoot .sale-limit td {
