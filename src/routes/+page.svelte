@@ -3,6 +3,40 @@
   import { confirmStore } from '$lib/state/confirmStore.svelte';
   import Dice from '$lib/components/Dice.svelte';
   import { onMount, untrack } from 'svelte';
+
+  function cardTipFlip(node: Element, { duration = 250 } = {}) {
+    const style = getComputedStyle(node);
+    const height = parseFloat(style.height);
+    const marginTop = parseFloat(style.marginTop) || 0;
+    const marginBottom = parseFloat(style.marginBottom) || 0;
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+
+    return {
+      duration,
+      css: (t: number) => {
+        const angle = (1 - t) * 90;
+        const opacity = t;
+        const currentHeight = t * height;
+        const currentMarginTop = t * marginTop;
+        const currentMarginBottom = t * marginBottom;
+        const currentPaddingTop = t * paddingTop;
+        const currentPaddingBottom = t * paddingBottom;
+
+        return `
+          opacity: ${opacity};
+          height: ${currentHeight}px;
+          margin-top: ${currentMarginTop}px;
+          margin-bottom: ${currentMarginBottom}px;
+          padding-top: ${currentPaddingTop}px;
+          padding-bottom: ${currentPaddingBottom}px;
+          transform: perspective(900px) rotateX(${angle}deg);
+          transform-origin: top center;
+          overflow: hidden;
+        `;
+      }
+    };
+  }
   import { browser } from '$app/environment';
   import type { PageData } from './$types';
   import type { Player, TurnHistoryEntry } from '$lib/state/gameStore.svelte';
@@ -520,7 +554,9 @@
                 </div>
             </div>
           {#if showGettingStartedTips}
-            <div class="card-tip">To start, <strong>select the color corresponding to your game pieces</strong>. One the game begins, you will want to find the prospector and surveyor pieces that correspond to your starting position.</div>
+            <div class="card-tip" transition:cardTipFlip>
+              To start, <strong>select the color corresponding to your game pieces</strong>. One the game begins, you will want to find the prospector and surveyor pieces that correspond to your starting position.
+            </div>
           {/if}
         </div>
 
@@ -528,7 +564,9 @@
         <div class="card" style="grid-column: 1 / -1;">
           <h3>Turn Actions</h3>
           {#if showGettingStartedTips}
-            <div class="card-tip">Here you can <strong>add up all the debts and credits for the turn</strong>. To begin, you must be done prospecting. Debts are subtracted while credits and adjustments are added to your balance. Click "I'm done operating" to save your changes. If you've saved prematurely, you can also make an adjustment. If needed you can enter negative adjustments.</div>
+            <div class="card-tip" transition:cardTipFlip>
+              Here you can <strong>add up all the debts and credits for the turn</strong>. To begin, you must be done prospecting. Debts are subtracted while credits and adjustments are added to your balance. Click "I'm done operating" to save your changes. If you've saved prematurely, you can also make an adjustment. If needed you can enter negative adjustments.
+            </div>
           {/if}
           {#if isWinter}
             <div style="background: rgba(100, 181, 246, 0.12); border: 1px solid #64b5f6; border-radius: 6px; padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-md); color: #90caf9;">
@@ -614,7 +652,9 @@
     <div class="card">
       <h3>Turn Sequence</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">This card, modeled after the physical card from the game, <strong>outlines the sequence of phases and steps for each game turn</strong> and highlights the current phase. <br><a href="/rules#game-turn-sequence">Learn more</a></div>
+        <div class="card-tip" transition:cardTipFlip>
+          This card, modeled after the physical card from the game, <strong>outlines the sequence of phases and steps for each game turn</strong> and highlights the current phase. <br><a href="/rules#game-turn-sequence">Learn more</a>
+        </div>
       {/if}
       <ol class="turn-sequence">
         <li>Deal Turn Order Cards</li>
@@ -639,9 +679,11 @@
 
     <!-- Roll to Operate Claim Widget -->
     <div class="card roll-card animate-entrance">
-      <h3>Roll to Operate Claim</h3>
+      <h3>Roll to Operate</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">Here you can <strong>roll dice to operate a claim</strong> and determine how many resources you yield. Roll one die the first time you operate a claim, and 2 dice for subsequent turns.</div>
+        <div class="card-tip" transition:cardTipFlip>
+          Here you can <strong>roll dice to operate a claim</strong> and determine how many resources you yield. Roll one die the first time you operate a claim, and 2 dice for subsequent turns.
+        </div>
       {/if}
       <div style="display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) 0; flex: 1;">
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-md); width: 100%;">
@@ -690,7 +732,9 @@
     <div class="card">
       <h3>Player Order ({gameStore.players.length})</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">This is where you can <strong>see all players in the game</strong>, the order for this game turn, and whether others are ready to move to the next phase. As players reach the visibility threshold, their balance will become visible.</div>
+        <div class="card-tip" transition:cardTipFlip>
+          This is where you can <strong>see all players in the game</strong>, the order for this game turn, and whether others are ready to move to the next phase. As players reach the visibility threshold, their balance will become visible.
+        </div>
       {/if}
       {#if gameStore.players.length === 0}
         <p>No players added yet.</p>
@@ -724,7 +768,9 @@
     <div class="card">
       <h3>Game Status</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">This section lists some <strong>broader game details</strong> like the turn and is also where a player can move everyone forward to the next phase when all are ready.</div>
+        <div class="card-tip" transition:cardTipFlip>
+          This section lists some broader <strong>game details like the turn</strong> and is also where a player can move everyone forward to the next phase when all are ready.
+        </div>
       {/if}
     {#if winner}
       <p class="game-status-line"><strong>Winner:</strong> {winner.name} 🎉</p>
@@ -757,7 +803,9 @@
     <div class="card" style="grid-column: 1 / -1;">
       <h3>Your Turn History</h3>
       {#if showGettingStartedTips}
-        <div class="card-tip">Here you can <strong>review your personal turn history</strong>, including net changes and balances for each round. This can be helpful if you want to compare how you are doing with previous turns.</div>
+        <div class="card-tip" transition:cardTipFlip>
+          Here you can <strong>review your personal turn history</strong>, including net changes and balances for each round. This can be helpful if you want to compare how you are doing with previous turns.
+        </div>
       {/if}
       {#if !loggedInPlayer?.history || loggedInPlayer.history.length === 0}
         <p>No turns completed yet.</p>
