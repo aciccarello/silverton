@@ -77,6 +77,14 @@ export class GameState {
             this.config.startingMoney = startingMoney;
             this.players.forEach(p => {
                 p.money = startingMoney;
+
+                // Assign starting market based on turn order
+                const order = p.turnOrder || 0;
+                if (order === 1 || order === 2) p.marketsInPlay = ['Denver'];
+                else if (order === 3) p.marketsInPlay = ['El Paso'];
+                else if (order === 4) p.marketsInPlay = ['Salt Lake City'];
+                else if (order === 5) p.marketsInPlay = ['Pueblo'];
+                else if (order === 6) p.marketsInPlay = ['Santa Fe'];
             });
 
             this.currentPhase = 'prospecting';

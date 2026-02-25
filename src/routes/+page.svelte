@@ -440,9 +440,9 @@
     assignTurnOrder();
     gameStore.startGame();
 
-    // Update players on server since startGame modified their money
+    // Update players on server since startGame modified their money and assigned markets
     gameStore.players.forEach((p) => {
-      savePlayer($state.snapshot(p), "Assigned starting money");
+      savePlayer($state.snapshot(p), "Assigned starting money and markets");
     });
 
     saveGame(
