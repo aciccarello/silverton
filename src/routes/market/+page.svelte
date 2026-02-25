@@ -822,6 +822,26 @@
     margin: 0;
   }
 
+  @media (max-width: 768px) {
+    .header {
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+    }
+
+    .turn-bar {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .turn-bar button,
+    .turn-bar a {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+    }
+  }
+
   .turn-bar {
     display: flex;
     align-items: center;
@@ -850,8 +870,15 @@
   .chart-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0;
+    gap: 1.5rem;
     align-items: flex-start;
+  }
+
+  @media (max-width: 768px) {
+    .chart-grid {
+      gap: 2rem;
+      padding: 1rem 0;
+    }
   }
 
   .chart-grid .price-chart {
