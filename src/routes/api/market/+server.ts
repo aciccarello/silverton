@@ -12,10 +12,10 @@ export const GET: RequestHandler = async ({ url }) => {
     const cityOrder = CHART_CITY_ORDER.map((name) => cities.find((c) => c.name === name)).filter(Boolean) as { id: number; name: string }[];
 
     const globalRows = getGlobalMarketState(turn);
-    const global = Object.fromEntries(globalRows.map((r) => [r.resource, r.price]));
+    const global = Object.fromEntries(globalRows.map((r) => [r.resource, r.price_index]));
 
     const cityRows = getCityMarketState(turn);
-    const cityByKey = new Map(cityRows.map((r) => [`${r.city_id}-${r.resource}`, r.price]));
+    const cityByKey = new Map(cityRows.map((r) => [`${r.city_id}-${r.resource}`, r.price_index]));
 
     const cityPrices: { cityId: number; cityName: string; lumber: number; coal: number }[] = cityOrder.map((c) => ({
         cityId: c.id,

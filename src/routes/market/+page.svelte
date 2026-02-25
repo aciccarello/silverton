@@ -128,14 +128,16 @@
     loadMarket();
   });
 
-  function isCurrentPrice(resource: string, price: number, cityName?: string, cityResource?: string): boolean {
+  function isCurrentPrice(resource: string, rowIndex: number, cityName?: string, cityResource?: string): boolean {
+    // The API now returns indices into the price ladders (not raw prices), so we
+    // compare against row indices in the chart.
     if (resource === 'gold' || resource === 'copper' || resource === 'silver') {
-      return global[resource as keyof typeof global] === price;
+      return global[resource as keyof typeof global] === rowIndex;
     }
     if (cityName && cityResource && (cityResource === 'lumber' || cityResource === 'coal')) {
       const city = cityPrices.find((c) => c.cityName === cityName);
       if (!city) return false;
-      return city[cityResource] === price;
+      return city[cityResource] === rowIndex;
     }
     return false;
   }
@@ -228,7 +230,7 @@
                   class:starting-cell={GOLD_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.gold}
                   title={GOLD_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.gold ? 'Starting price' : undefined}
                 >
-                  {#if GOLD_PRICES[i] != null && isCurrentPrice('gold', GOLD_PRICES[i])}<span class="marker">✕</span>{/if}
+                  {#if GOLD_PRICES[i] != null && isCurrentPrice('gold', i)}<span class="marker">✕</span>{/if}
                 </td>
                 <td class="price-col">{COPPER_PRICES[i] ?? ''}</td>
                 <td
@@ -236,7 +238,7 @@
                   class:starting-cell={COPPER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.copper}
                   title={COPPER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.copper ? 'Starting price' : undefined}
                 >
-                  {#if COPPER_PRICES[i] != null && isCurrentPrice('copper', COPPER_PRICES[i])}<span class="marker">✕</span>{/if}
+                  {#if COPPER_PRICES[i] != null && isCurrentPrice('copper', i)}<span class="marker">✕</span>{/if}
                 </td>
                 <td class="price-col">{SILVER_PRICES[i] ?? ''}</td>
                 <td
@@ -244,7 +246,7 @@
                   class:starting-cell={SILVER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.silver}
                   title={SILVER_PRICES[i] != null && i === STARTING_GLOBAL_INDEX.silver ? 'Starting price' : undefined}
                 >
-                  {#if SILVER_PRICES[i] != null && isCurrentPrice('silver', SILVER_PRICES[i])}<span class="marker">✕</span>{/if}
+                  {#if SILVER_PRICES[i] != null && isCurrentPrice('silver', i)}<span class="marker">✕</span>{/if}
                 </td>
               </tr>
             {/each}
@@ -292,7 +294,7 @@
                     class:starting-cell={rowIndex === STARTING_LUMBER_ROW_INDEX[cityName]}
                     title={rowIndex === STARTING_LUMBER_ROW_INDEX[cityName] ? 'Starting price' : undefined}
                   >
-                    {#if LUMBER_PRICES.includes(price) && isCurrentPrice('lumber', price, cityName, 'lumber')}<span class="marker">✕</span>{/if}
+                    {#if LUMBER_PRICES.includes(price) && isCurrentPrice('lumber', rowIndex, cityName, 'lumber')}<span class="marker">✕</span>{/if}
                   </td>
                 {/each}
               </tr>
@@ -343,7 +345,7 @@
                     class:starting-cell={rowIndex === STARTING_COAL_ROW_INDEX[cityName]}
                     title={rowIndex === STARTING_COAL_ROW_INDEX[cityName] ? 'Starting price' : undefined}
                   >
-                    {#if COAL_PRICES.includes(price) && isCurrentPrice('coal', price, cityName, 'coal')}<span class="marker">✕</span>{/if}
+                    {#if COAL_PRICES.includes(price) && isCurrentPrice('coal', rowIndex, cityName, 'coal')}<span class="marker">✕</span>{/if}
                   </td>
                 {/each}
               </tr>
@@ -359,6 +361,8 @@
           </tfoot>
         </table>
       </div>
+      <p class="current-legend">✕ indicates the current selling price for this turn.</p>
+      <p class="chart-footer-row">NUMBER OF PLAYERS: 1–6</p>
     </div>
   {/if}
 </div>
@@ -530,7 +534,7 @@
     background: var(--color-bg-elevated);
     color: var(--color-text-secondary);
     font-weight: 600;
-    height: 3.5rem;
+    height: 2.5rem;
     vertical-align: middle;
   }
 
@@ -551,6 +555,12 @@
     border: 2px solid grey;
   }
 
+  .current-legend {
+    margin-top: var(--spacing-md);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+
   .marker {
     color: #42a5f5;
     font-weight: bold;
@@ -559,18 +569,6 @@
 
   .price-chart tfoot .sale-limit td {
     font-size: 0.8rem;
-    color: var(--color-text-secondary);
-  }
-
-  .chart-footer-row {
-    margin-top: var(--spacing-md);
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-  }
-
-  .copyright {
-    margin-top: var(--spacing-sm);
-    font-size: 0.75rem;
     color: var(--color-text-secondary);
   }
 

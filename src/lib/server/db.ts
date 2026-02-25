@@ -20,23 +20,23 @@ db.exec(`
   )
 `);
 
-// Global market state: gold, copper, silver — one price per turn worldwide
+// Global market state: gold, copper, silver — stores index into price ladder per turn
 db.exec(`
   CREATE TABLE IF NOT EXISTS global_market_state (
     turn_number INTEGER NOT NULL,
     resource TEXT NOT NULL CHECK (resource IN ('gold', 'copper', 'silver')),
-    price INTEGER NOT NULL,
+    price_index INTEGER NOT NULL,
     PRIMARY KEY (turn_number, resource)
   )
 `);
 
-// Per-city market state: coal and lumber — price per city per turn
+// Per-city market state: coal and lumber — stores index into price ladder per city per turn
 db.exec(`
   CREATE TABLE IF NOT EXISTS city_market_state (
     turn_number INTEGER NOT NULL,
     city_id INTEGER NOT NULL,
     resource TEXT NOT NULL CHECK (resource IN ('coal', 'lumber')),
-    price INTEGER NOT NULL,
+    price_index INTEGER NOT NULL,
     PRIMARY KEY (turn_number, city_id, resource),
     FOREIGN KEY (city_id) REFERENCES cities (id)
   )
@@ -52,41 +52,63 @@ if (cityCount === 0) {
     }
 }
 
-// Seed initial market prices for turn 1 if not present
+// Seed initial market indices for turn 1 if not present.
+// We store the index into the price ladders (not the raw price value) so that
+// duplicate prices on the chart can still be distinguished.
 const turn1GlobalStmt = db.prepare('SELECT 1 FROM global_market_state WHERE turn_number = 1 LIMIT 1');
 if (!turn1GlobalStmt.get()) {
-    const insGlobal = db.prepare('INSERT INTO global_market_state (turn_number, resource, price) VALUES (1, ?, ?)');
-    insGlobal.run('gold', 250);
-    insGlobal.run('copper', 200);
-    insGlobal.run('silver', 200);
+    const insGlobal = db.prepare('INSERT INTO global_market_state (turn_number, resource, price_index) VALUES (1, ?, ?)');
+    // Starting prices (second occurrence where duplicated) correspond to:
+    // gold: index 5 (250), copper: index 5 (200), silver: index 4 (200).
+    insGlobal.run('gold', 5);
+    insGlobal.run('copper', 5);
+    insGlobal.run('silver', 4);
 
     const cityIds = new Map(
         (db.prepare('SELECT id, name FROM cities').all() as { id: number; name: string }[]).map((r) => [r.name, r.id])
     );
-    const insCity = db.prepare('INSERT INTO city_market_state (turn_number, city_id, resource, price) VALUES (1, ?, ?, ?)');
+    const insCity = db.prepare(
+        'INSERT INTO city_market_state (turn_number, city_id, resource, price_index) VALUES (1, ?, ?, ?)'
+    );
 
-    const lumberByCity: [string, number][] = [
-        ['Denver', 100],
-        ['Salt Lake City', 120],
-        ['Pueblo', 100],
-        ['Santa Fe', 80],
-        ['El Paso', 100]
+    // City-based lumber prices — we store indices into:
+    // LUMBER_PRICES = [300, 240, 200, 160, 120, 100, 80, 60, 40, 30]
+    // Starting prices:
+    // Denver: 100 (index 5)
+    // Salt Lake City: 120 (index 4)
+    // Pueblo: 100 (index 5)
+    // Santa Fe: 80 (index 6)
+    // El Paso: 100 (index 5)
+    const lumberByCityIndex: [string, number][] = [
+        ['Denver', 5],
+        ['Salt Lake City', 4],
+        ['Pueblo', 5],
+        ['Santa Fe', 6],
+        ['El Paso', 5]
     ];
-    for (const [name, price] of lumberByCity) {
+    for (const [name, index] of lumberByCityIndex) {
         const cityId = cityIds.get(name);
-        if (cityId != null) insCity.run(cityId, 'lumber', price);
+        if (cityId != null) insCity.run(cityId, 'lumber', index);
     }
 
-    const coalByCity: [string, number][] = [
-        ['Denver', 60],
-        ['Salt Lake City', 60],
-        ['Pueblo', 40],
-        ['Santa Fe', 60],
-        ['El Paso', 60]
+    // City-based coal prices — indices into:
+    // COAL_PRICES = [140, 120, 100, 80, 60, 60, 40, 30, 20, 20]
+    // Starting prices:
+    // Denver: 60 (first, index 4)
+    // Salt Lake City: 60 (second, index 5)
+    // Pueblo: 40 (index 6)
+    // Santa Fe: 60 (second, index 5)
+    // El Paso: 60 (first, index 4)
+    const coalByCityIndex: [string, number][] = [
+        ['Denver', 4],
+        ['Salt Lake City', 5],
+        ['Pueblo', 6],
+        ['Santa Fe', 5],
+        ['El Paso', 4]
     ];
-    for (const [name, price] of coalByCity) {
+    for (const [name, index] of coalByCityIndex) {
         const cityId = cityIds.get(name);
-        if (cityId != null) insCity.run(cityId, 'coal', price);
+        if (cityId != null) insCity.run(cityId, 'coal', index);
     }
 }
 
@@ -182,32 +204,43 @@ export function getCities(): CityRow[] {
     return stmt.all() as CityRow[];
 }
 
-// --- Market state (prices as-of a turn) ---
-export type GlobalMarketRow = { turn_number: number; resource: string; price: number };
-export type CityMarketRow = { turn_number: number; city_id: number; resource: string; price: number };
+// --- Market state (indices into price ladders as-of a turn) ---
+export type GlobalMarketRow = { turn_number: number; resource: string; price_index: number };
+export type CityMarketRow = { turn_number: number; city_id: number; resource: string; price_index: number };
 
 export function getGlobalMarketState(turnNumber: number): GlobalMarketRow[] {
-    const stmt = db.prepare('SELECT turn_number, resource, price FROM global_market_state WHERE turn_number = ?');
+    const stmt = db.prepare('SELECT turn_number, resource, price_index FROM global_market_state WHERE turn_number = ?');
     return stmt.all(turnNumber) as GlobalMarketRow[];
 }
 
 export function getCityMarketState(turnNumber: number): CityMarketRow[] {
-    const stmt = db.prepare('SELECT turn_number, city_id, resource, price FROM city_market_state WHERE turn_number = ?');
+    const stmt = db.prepare(
+        'SELECT turn_number, city_id, resource, price_index FROM city_market_state WHERE turn_number = ?'
+    );
     return stmt.all(turnNumber) as CityMarketRow[];
 }
 
-export function setGlobalMarketPrice(turnNumber: number, resource: 'gold' | 'copper' | 'silver', price: number) {
+export function setGlobalMarketPrice(
+    turnNumber: number,
+    resource: 'gold' | 'copper' | 'silver',
+    price_index: number
+) {
     const stmt = db.prepare(`
-        INSERT INTO global_market_state (turn_number, resource, price) VALUES (?, ?, ?)
-        ON CONFLICT (turn_number, resource) DO UPDATE SET price = excluded.price
+        INSERT INTO global_market_state (turn_number, resource, price_index) VALUES (?, ?, ?)
+        ON CONFLICT (turn_number, resource) DO UPDATE SET price_index = excluded.price_index
     `);
-    stmt.run(turnNumber, resource, price);
+    stmt.run(turnNumber, resource, price_index);
 }
 
-export function setCityMarketPrice(turnNumber: number, cityId: number, resource: 'coal' | 'lumber', price: number) {
+export function setCityMarketPrice(
+    turnNumber: number,
+    cityId: number,
+    resource: 'coal' | 'lumber',
+    price_index: number
+) {
     const stmt = db.prepare(`
-        INSERT INTO city_market_state (turn_number, city_id, resource, price) VALUES (?, ?, ?, ?)
-        ON CONFLICT (turn_number, city_id, resource) DO UPDATE SET price = excluded.price
+        INSERT INTO city_market_state (turn_number, city_id, resource, price_index) VALUES (?, ?, ?, ?)
+        ON CONFLICT (turn_number, city_id, resource) DO UPDATE SET price_index = excluded.price_index
     `);
-    stmt.run(turnNumber, cityId, resource, price);
+    stmt.run(turnNumber, cityId, resource, price_index);
 }
