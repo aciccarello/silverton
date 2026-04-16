@@ -293,3 +293,14 @@ a:hover {
   gap: var(--spacing-lg);
   margin-top: var(--spacing-lg);
 }
+
+/* Remove up/down arrows from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
