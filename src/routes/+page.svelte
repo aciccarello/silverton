@@ -727,13 +727,19 @@
                 </label>
               {/each}
             </div>
-            <div style="margin-top: 0.5rem;">
+            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               <strong>Starting Pieces ({loggedInPlayer.startingOrder}):</strong>
-              <span
-                style="color: var(--color-primary); font-weight: bold; margin-left: 0.5rem;"
-              >
-                {getStartingPieces(loggedInPlayer) || "N/A"}
-              </span>
+              {#if getStartingPieces(loggedInPlayer)}
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  {#each getStartingPieces(loggedInPlayer)?.split(',') || [] as piece}
+                    <div style="display: flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-bg-surface); border: 2px solid var(--color-border); color: var(--color-primary); font-weight: bold; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                      {piece.trim()}
+                    </div>
+                  {/each}
+                </div>
+              {:else}
+                <span style="color: var(--color-text-secondary); font-style: italic;">N/A</span>
+              {/if}
             </div>
           </div>
           {#if showGettingStartedTips}
