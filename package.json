@@ -3,15 +3,19 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "lint-staged": {
+    "*.{js,ts,svelte,json,css,html,md}": "prettier --ignore-unknown --write"
+  },
   "scripts": {
     "dev": "vite dev --host",
     "start": "npm run dev",
     "build": "vite build",
     "preview": "vite preview --host",
-    "prepare": "svelte-kit sync || echo ''",
+    "prepare": "svelte-kit sync || echo ''; husky",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.3",
@@ -23,6 +27,8 @@
     "svelte": "^5.51.0",
     "svelte-check": "^4.3.6",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2"
   }
 }
