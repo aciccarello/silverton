@@ -1,6 +1,6 @@
 # Silverton Board Game Tracker
 
-Silverton is a custom-built web application designed to track sessions of the classic board game *Silverton*. It manages player accounts, real-time game state, turn history, and complex calculations for a smooth gaming experience.
+Silverton is a custom-built web application designed to track sessions of the classic board game _Silverton_. It manages player accounts, real-time game state, turn history, and complex calculations for a smooth gaming experience.
 
 ![Screenshot of the app showing balance adjustments, turn tracking, and dice rolling.](/docs/silverton_dashboard.png)
 
@@ -34,6 +34,7 @@ The initial version of this app was built with AI using Google's Antigravity IDE
 ### Installation
 
 1. Clone the repository:
+
    ```sh
    git clone <repository-url>
    cd silverton
@@ -47,6 +48,7 @@ The initial version of this app was built with AI using Google's Antigravity IDE
 ### Developing
 
 Start the development server:
+
 ```sh
 npm run dev
 ```
