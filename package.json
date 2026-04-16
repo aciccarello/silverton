@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "lint-staged": {
-    "*.{js,ts,svelte,json,css,html,md}": "prettier --ignore-unknown --write"
+    "*.{js,ts,svelte,json,css,html,md,prettierrc}": "prettier --ignore-unknown --write"
   },
   "scripts": {
     "dev": "vite dev --host",
