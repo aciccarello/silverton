@@ -27,3 +27,7 @@ vite.config.ts.timestamp-*
 # State
 local.db
 /game-archive
+
+# Playwright
+test-results/
+playwright-report/

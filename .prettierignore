@@ -8,3 +8,5 @@ node_modules
 !.env.example
 package-lock.json
 local.db
+test-results/
+playwright-report/
