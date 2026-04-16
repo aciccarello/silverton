@@ -180,7 +180,15 @@
   }
 
   function logOut() {
-    clearTurnActionsFromLocal();
+    debitBuyTracks = null;
+    debitBuyContracts = null;
+    debitBuyClaims = null;
+    debitOperateClaims = null;
+    debitPayFines = null;
+    creditPassengerRevenue = null;
+    creditSellResources = null;
+    dealsAndAdjustments = null;
+
     loggedInUserId = null;
     if (browser) {
       localStorage.removeItem("silverton_active_user_id");
@@ -302,18 +310,28 @@
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        debitBuyTracks = data.debitBuyTracks;
-        debitBuyContracts = data.debitBuyContracts;
-        debitBuyClaims = data.debitBuyClaims;
-        debitOperateClaims = data.debitOperateClaims;
-        debitPayFines = data.debitPayFines;
-        creditPassengerRevenue = data.creditPassengerRevenue;
-        creditSellResources = data.creditSellResources;
-        dealsAndAdjustments = data.dealsAndAdjustments;
+        debitBuyTracks = data.debitBuyTracks ?? null;
+        debitBuyContracts = data.debitBuyContracts ?? null;
+        debitBuyClaims = data.debitBuyClaims ?? null;
+        debitOperateClaims = data.debitOperateClaims ?? null;
+        debitPayFines = data.debitPayFines ?? null;
+        creditPassengerRevenue = data.creditPassengerRevenue ?? null;
+        creditSellResources = data.creditSellResources ?? null;
+        dealsAndAdjustments = data.dealsAndAdjustments ?? null;
+        return;
       } catch (e) {
         console.error("Failed to parse saved turn actions", e);
       }
     }
+    
+    debitBuyTracks = null;
+    debitBuyContracts = null;
+    debitBuyClaims = null;
+    debitOperateClaims = null;
+    debitPayFines = null;
+    creditPassengerRevenue = null;
+    creditSellResources = null;
+    dealsAndAdjustments = null;
   }
 
   function clearTurnActionsFromLocal() {
