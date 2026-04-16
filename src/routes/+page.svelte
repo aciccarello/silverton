@@ -189,6 +189,8 @@
     creditSellResources = null;
     dealsAndAdjustments = null;
 
+    clearTurnActionsFromLocal();
+
     loggedInUserId = null;
     if (browser) {
       localStorage.removeItem("silverton_active_user_id");
@@ -256,18 +258,18 @@
 
   const SALE_LIMIT_LUMBER: Record<string, number> = {
     Denver: 10,
-    'Salt Lake City': 8,
+    "Salt Lake City": 8,
     Pueblo: 6,
-    'Santa Fe': 6,
-    'El Paso': 8
+    "Santa Fe": 6,
+    "El Paso": 8,
   };
 
   const SALE_LIMIT_COAL: Record<string, number> = {
     Denver: 16,
-    'Salt Lake City': 10,
+    "Salt Lake City": 10,
     Pueblo: 8,
-    'Santa Fe': 8,
-    'El Paso': 8
+    "Santa Fe": 8,
+    "El Paso": 8,
   };
 
   type SellMarketData = {
@@ -275,25 +277,39 @@
     cityPrices: { cityName: string; lumber: number; coal: number }[];
   };
 
-  type SellRowId = 'gold' | 'silver' | 'copper' | `lumber:${string}` | `coal:${string}`;
+  type SellRowId =
+    | "gold"
+    | "silver"
+    | "copper"
+    | `lumber:${string}`
+    | `coal:${string}`;
 
   let isSellModalOpen = $state(false);
   let isSellMarketLoading = $state(false);
   let sellMarketError = $state<string | null>(null);
   let sellMarketData = $state<SellMarketData | null>(null);
-  let sellInputs = $state<Record<SellRowId, number>>({} as Record<SellRowId, number>);
+  let sellInputs = $state<Record<SellRowId, number>>(
+    {} as Record<SellRowId, number>,
+  );
 
-  function priceForMetal(resource: 'gold' | 'silver' | 'copper', index: number): number {
+  function priceForMetal(
+    resource: "gold" | "silver" | "copper",
+    index: number,
+  ): number {
     const ladder =
-      resource === 'gold' ? GOLD_PRICES : resource === 'copper' ? COPPER_PRICES : SILVER_PRICES;
+      resource === "gold"
+        ? GOLD_PRICES
+        : resource === "copper"
+          ? COPPER_PRICES
+          : SILVER_PRICES;
     return ladder[index] ?? 0;
   }
 
   function priceForCityResource(
-    resource: 'lumber' | 'coal',
-    index: number
+    resource: "lumber" | "coal",
+    index: number,
   ): number {
-    const ladder = resource === 'lumber' ? LUMBER_PRICES : COAL_PRICES;
+    const ladder = resource === "lumber" ? LUMBER_PRICES : COAL_PRICES;
     return ladder[index] ?? 0;
   }
 
@@ -311,13 +327,13 @@
     const rows: SellRow[] = [];
     const { global, cityPrices } = sellMarketData;
 
-    (['gold', 'silver', 'copper'] as const).forEach((resource) => {
+    (["gold", "silver", "copper"] as const).forEach((resource) => {
       const idx = global[resource];
       rows.push({
         id: resource,
         label: resource.charAt(0).toUpperCase() + resource.slice(1),
         price: priceForMetal(resource, idx),
-        maxCount: null
+        maxCount: null,
       });
     });
 
@@ -334,18 +350,18 @@
 
       lumberRows.push({
         id: `lumber:${cityName}`,
-        label: 'Lumber',
+        label: "Lumber",
         cityLabel: cityName,
-        price: priceForCityResource('lumber', city.lumber),
-        maxCount: lumberLimit
+        price: priceForCityResource("lumber", city.lumber),
+        maxCount: lumberLimit,
       });
 
       coalRows.push({
         id: `coal:${cityName}`,
-        label: 'Coal',
+        label: "Coal",
         cityLabel: cityName,
-        price: priceForCityResource('coal', city.coal),
-        maxCount: coalLimit
+        price: priceForCityResource("coal", city.coal),
+        maxCount: coalLimit,
       });
     }
 
@@ -375,15 +391,16 @@
     sellMarketError = null;
     try {
       const res = await fetch(`/api/market?turn=${gameStore.turnNumber}`);
-      if (!res.ok) throw new Error('Failed to load market data');
+      if (!res.ok) throw new Error("Failed to load market data");
       const data = await res.json();
       sellMarketData = {
         global: data.global,
-        cityPrices: data.cityPrices ?? []
+        cityPrices: data.cityPrices ?? [],
       };
     } catch (e) {
-      console.error('Failed to load sell market data', e);
-      sellMarketError = 'Could not load market prices. Try again from the Market page.';
+      console.error("Failed to load sell market data", e);
+      sellMarketError =
+        "Could not load market prices. Try again from the Market page.";
     } finally {
       isSellMarketLoading = false;
     }
@@ -483,7 +500,7 @@
         console.error("Failed to parse saved turn actions", e);
       }
     }
-    
+
     debitBuyTracks = null;
     debitBuyContracts = null;
     debitBuyClaims = null;
@@ -905,18 +922,25 @@
                 </label>
               {/each}
             </div>
-            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div
+              style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;"
+            >
               <strong>Starting Pieces ({loggedInPlayer.startingOrder}):</strong>
               {#if getStartingPieces(loggedInPlayer)}
                 <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                  {#each getStartingPieces(loggedInPlayer)?.split(',') || [] as piece}
-                    <div style="display: flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-bg-surface); border: 2px solid var(--color-border); color: var(--color-primary); font-weight: bold; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                  {#each getStartingPieces(loggedInPlayer)?.split(",") || [] as piece}
+                    <div
+                      style="display: flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-bg-surface); border: 2px solid var(--color-border); color: var(--color-primary); font-weight: bold; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                    >
                       {piece.trim()}
                     </div>
                   {/each}
                 </div>
               {:else}
-                <span style="color: var(--color-text-secondary); font-style: italic;">N/A</span>
+                <span
+                  style="color: var(--color-text-secondary); font-style: italic;"
+                  >N/A</span
+                >
               {/if}
             </div>
           </div>
@@ -1038,7 +1062,10 @@
                     type="button"
                     class="btn btn-outline"
                     style="padding: 0.1rem 0.4rem; font-size: 0.75rem; border-width: 1px;"
-                    onclick={(e) => { e.preventDefault(); openSellResourcesModal(); }}
+                    onclick={(e) => {
+                      e.preventDefault();
+                      openSellResourcesModal();
+                    }}
                     disabled={isOperatingLocked}
                   >
                     Calculate
@@ -1446,82 +1473,95 @@
     <div class="modal">
       <h3>Sell Resources</h3>
       <div class="modal-body">
-        <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-md);">
-          Enter how many units you are selling in each market. The value will be calculated from
-          the current market price. Remember you can normally only deliver from two resources per turn.
+        <p
+          style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-md);"
+        >
+          Enter how many units you are selling in each market. The value will be
+          calculated from the current market price. Remember you can normally
+          only deliver from two resources per turn.
         </p>
 
         {#if isSellMarketLoading}
           <p>Loading market prices…</p>
         {:else if sellMarketError}
           <p style="color: #ff4d4f;">{sellMarketError}</p>
-        {:else}
-          {#if sellRows.length === 0}
-            <p style="font-size: 0.9rem; color: var(--color-text-secondary);">
-              No markets available. Make sure market prices have been set for this turn.
-            </p>
-          {:else}
-            <div class="sell-grid">
-              {#each sellRows as row}
-                <div class="sell-row">
-                  <div class="sell-row-main">
-                    <div class="sell-row-label">
-                      <strong>{row.label}</strong>
-                      {#if row.cityLabel}
-                        <span class="sell-row-city">({row.cityLabel})</span>
-                      {/if}
-                    </div>
-                    <div class="sell-row-meta">
-                      <span>Price: ${row.price}</span>
-                      {#if row.maxCount !== null}
-                        <span>Max: {row.maxCount}</span>
-                      {/if}
-                    </div>
-                  </div>
-                  <div class="sell-row-input">
-                    <input
-                      type="number"
-                      min="0"
-                      max={row.maxCount ?? undefined}
-                      value={sellInputs[row.id] ?? ''}
-                      oninput={(event) => {
-                        const value = Number((event.currentTarget as HTMLInputElement).value || 0);
-                        sellInputs[row.id] = value;
-                      }}
-                    />
-                    <span class="sell-row-total">
-                      ${ (sellInputs[row.id] ?? 0) * row.price }
-                    </span>
-                  </div>
-                </div>
-              {/each}
-            </div>
-
-        {#if !loggedInPlayer?.marketsInPlay?.length}
-          <p style="font-size: 0.9rem; color: #ffcc00; margin-bottom: var(--spacing-md); font-style: italic;">
-            Select your markets on the dashboard to see lumber and coal prices.
+        {:else if sellRows.length === 0}
+          <p style="font-size: 0.9rem; color: var(--color-text-secondary);">
+            No markets available. Make sure market prices have been set for this
+            turn.
           </p>
-        {/if}
-
-            <div class="sell-summary">
-              <div>
-                <strong>Total sold value:</strong>
-                <span>${sellTotal}</span>
-              </div>
-              {#if sellCapacityWarning}
-                <div class="sell-warning">
-                  You have entered quantities in more than two resources. Make sure this does not
-                  exceed your delivery capacity this turn.
+        {:else}
+          <div class="sell-grid">
+            {#each sellRows as row}
+              <div class="sell-row">
+                <div class="sell-row-main">
+                  <div class="sell-row-label">
+                    <strong>{row.label}</strong>
+                    {#if row.cityLabel}
+                      <span class="sell-row-city">({row.cityLabel})</span>
+                    {/if}
+                  </div>
+                  <div class="sell-row-meta">
+                    <span>Price: ${row.price}</span>
+                    {#if row.maxCount !== null}
+                      <span>Max: {row.maxCount}</span>
+                    {/if}
+                  </div>
                 </div>
-              {/if}
-            </div>
+                <div class="sell-row-input">
+                  <input
+                    type="number"
+                    min="0"
+                    max={row.maxCount ?? undefined}
+                    value={sellInputs[row.id] ?? ""}
+                    oninput={(event) => {
+                      const value = Number(
+                        (event.currentTarget as HTMLInputElement).value || 0,
+                      );
+                      sellInputs[row.id] = value;
+                    }}
+                  />
+                  <span class="sell-row-total">
+                    ${(sellInputs[row.id] ?? 0) * row.price}
+                  </span>
+                </div>
+              </div>
+            {/each}
+          </div>
+
+          {#if !loggedInPlayer?.marketsInPlay?.length}
+            <p
+              style="font-size: 0.9rem; color: #ffcc00; margin-bottom: var(--spacing-md); font-style: italic;"
+            >
+              Select your markets on the dashboard to see lumber and coal
+              prices.
+            </p>
           {/if}
+
+          <div class="sell-summary">
+            <div>
+              <strong>Total sold value:</strong>
+              <span>${sellTotal}</span>
+            </div>
+            {#if sellCapacityWarning}
+              <div class="sell-warning">
+                You have entered quantities in more than two resources. Make
+                sure this does not exceed your delivery capacity this turn.
+              </div>
+            {/if}
+          </div>
         {/if}
       </div>
 
       <div class="btn-container" style="margin-top: var(--spacing-md);">
-        <button class="btn btn-outline" onclick={closeSellResourcesModal}>Cancel</button>
-        <button class="btn btn-primary" onclick={saveSellResourcesFromModal} disabled={!sellMarketData}>
+        <button class="btn btn-outline" onclick={closeSellResourcesModal}
+          >Cancel</button
+        >
+        <button
+          class="btn btn-primary"
+          onclick={saveSellResourcesFromModal}
+          disabled={!sellMarketData}
+        >
           Save
         </button>
       </div>
