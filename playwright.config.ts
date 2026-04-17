@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
+  // TODO: Allow for multiple games to be going simultaneously eventually
+  workers: 1,
   webServer: {
     command: "npm run dev",
     port: 5173,
