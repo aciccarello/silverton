@@ -385,6 +385,16 @@
 
   let sellCapacityWarning = $derived(sellDistinctResources > 2);
 
+  let sellOverMaxRows = $derived.by(() => {
+    return sellRows.filter((row) => {
+      if (row.maxCount === null) return false;
+      const qty = sellInputs[row.id] ?? 0;
+      return qty > row.maxCount;
+    });
+  });
+
+  let sellOverMaxWarning = $derived(sellOverMaxRows.length > 0);
+
   async function loadSellMarketForTurn() {
     if (!browser) return;
     isSellMarketLoading = true;
@@ -1549,6 +1559,18 @@
                 sure this does not exceed your delivery capacity this turn.
               </div>
             {/if}
+            {#if sellOverMaxWarning}
+              <div class="sell-warning sell-warning-error">
+                Quantity exceeds the max for
+                {sellOverMaxRows
+                  .map((row) =>
+                    row.cityLabel
+                      ? `${row.label} (${row.cityLabel})`
+                      : row.label,
+                  )
+                  .join(", ")}. Lower the amount to save.
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -1560,7 +1582,7 @@
         <button
           class="btn btn-primary"
           onclick={saveSellResourcesFromModal}
-          disabled={!sellMarketData}
+          disabled={!sellMarketData || sellOverMaxWarning}
         >
           Save
         </button>
@@ -1801,6 +1823,10 @@
   .sell-warning {
     font-size: 0.85rem;
     color: #ffd666;
+  }
+
+  .sell-warning-error {
+    color: #ff4d4f;
   }
 
   /* Color Picker Dropdown Styles */
